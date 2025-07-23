@@ -14,7 +14,277 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      assessments: {
+        Row: {
+          class_id: string
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          subject_id: string
+          teacher_id: string
+          title: string
+          total_marks: number
+          type: Database["public"]["Enums"]["assessment_type"]
+          updated_at: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          subject_id: string
+          teacher_id: string
+          title: string
+          total_marks?: number
+          type: Database["public"]["Enums"]["assessment_type"]
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          subject_id?: string
+          teacher_id?: string
+          title?: string
+          total_marks?: number
+          type?: Database["public"]["Enums"]["assessment_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessments_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessments_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessments_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      classes: {
+        Row: {
+          created_at: string
+          grade_level: number
+          id: string
+          name: string
+          teacher_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          grade_level: number
+          id?: string
+          name: string
+          teacher_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          grade_level?: number
+          id?: string
+          name?: string
+          teacher_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classes_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      learners: {
+        Row: {
+          address: string | null
+          class_id: string | null
+          created_at: string
+          date_of_birth: string | null
+          emergency_contact: string | null
+          id: string
+          parent_id: string | null
+          profile_id: string
+          student_number: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          class_id?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          emergency_contact?: string | null
+          id?: string
+          parent_id?: string | null
+          profile_id: string
+          student_number: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          class_id?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          emergency_contact?: string | null
+          id?: string
+          parent_id?: string | null
+          profile_id?: string
+          student_number?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learners_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learners_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learners_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          phone: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          last_name: string
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      results: {
+        Row: {
+          assessment_id: string
+          created_at: string
+          feedback: string | null
+          graded_at: string | null
+          id: string
+          learner_id: string
+          marks_obtained: number | null
+          status: Database["public"]["Enums"]["assessment_status"]
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          assessment_id: string
+          created_at?: string
+          feedback?: string | null
+          graded_at?: string | null
+          id?: string
+          learner_id: string
+          marks_obtained?: number | null
+          status?: Database["public"]["Enums"]["assessment_status"]
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assessment_id?: string
+          created_at?: string
+          feedback?: string | null
+          graded_at?: string | null
+          id?: string
+          learner_id?: string
+          marks_obtained?: number | null
+          status?: Database["public"]["Enums"]["assessment_status"]
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "results_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "results_learner_id_fkey"
+            columns: ["learner_id"]
+            isOneToOne: false
+            referencedRelation: "learners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subjects: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +293,9 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      assessment_status: "pending" | "submitted" | "graded"
+      assessment_type: "assignment" | "classwork" | "homework" | "test" | "exam"
+      user_role: "learner" | "parent" | "teacher" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +422,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      assessment_status: ["pending", "submitted", "graded"],
+      assessment_type: ["assignment", "classwork", "homework", "test", "exam"],
+      user_role: ["learner", "parent", "teacher", "admin"],
+    },
   },
 } as const
