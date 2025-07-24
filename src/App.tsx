@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import TeacherPortal from "./components/teacher/TeacherPortal";
 import Layout from "./components/Layout";
 import NotFound from "./pages/NotFound";
 
@@ -23,6 +24,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
+            <Route path="/teacher-portal" element={<Layout><TeacherPortal /></Layout>} />
             <Route path="/my-classes" element={<Layout><div>My Classes - Coming Soon</div></Layout>} />
             <Route path="/assignments" element={<Layout><div>Assignments - Coming Soon</div></Layout>} />
             <Route path="/results" element={<Layout><div>Results - Coming Soon</div></Layout>} />

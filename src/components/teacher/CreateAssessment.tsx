@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -46,7 +46,7 @@ const CreateAssessment = ({ onAssessmentCreated }: CreateAssessmentProps) => {
     const data = {
       title: formData.get('title') as string,
       description: formData.get('description') as string,
-      type: formData.get('type') as string,
+      type: formData.get('type') as 'assignment' | 'homework' | 'test' | 'exam',
       class_id: formData.get('class_id') as string,
       subject_id: formData.get('subject_id') as string,
       total_marks: parseInt(formData.get('total_marks') as string) || 100,
@@ -56,7 +56,7 @@ const CreateAssessment = ({ onAssessmentCreated }: CreateAssessmentProps) => {
 
     const { error } = await supabase
       .from('assessments')
-      .insert([data]);
+      .insert(data);
 
     if (error) {
       toast({

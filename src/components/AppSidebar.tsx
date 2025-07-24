@@ -43,11 +43,10 @@ const getParentMenuItems = () => [
 
 const getTeacherMenuItems = () => [
   { title: "Dashboard", url: "/dashboard", icon: Home },
+  { title: "Teacher Portal", url: "/teacher-portal", icon: BookOpen },
   { title: "My Classes", url: "/classes", icon: Users },
-  { title: "Create Assessment", url: "/create-assessment", icon: ClipboardList },
-  { title: "Grade Assessments", url: "/grade-assessments", icon: Award },
-  { title: "Reports", url: "/reports", icon: BarChart3 },
-  { title: "Subjects", url: "/subjects", icon: BookOpen },
+  { title: "Assessments", url: "/assessments", icon: ClipboardList },
+  { title: "Results", url: "/results", icon: Award },
   { title: "Schedule", url: "/schedule", icon: Calendar },
 ];
 
