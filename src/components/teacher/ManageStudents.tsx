@@ -1,0 +1,377 @@
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
+import { Users, Edit, Trash2, Filter } from 'lucide-react';
+
+const ManageStudents = () => {
+  const { profile } = useAuth();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [learners, setLearners] = useState<any[]>([]);
+  const [classes, setClasses] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const [selectedClassId, setSelectedClassId] = useState<string>('');
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>('');
+  const [editingLearner, setEditingLearner] = useState<any>(null);
+  const [editForm, setEditForm] = useState({
+    student_number: '',
+    full_name: '',
+    emergency_contact: '',
+    address: '',
+    date_of_birth: '',
+    class_id: ''
+  });
+
+  useEffect(() => {
+    loadData();
+  }, [profile]);
+
+  useEffect(() => {
+    if (selectedClassId) {
+      loadLearners();
+    }
+  }, [selectedClassId]);
+
+  const loadData = async () => {
+    if (!profile) return;
+    
+    const [classesResult, subjectsResult] = await Promise.all([
+      supabase.from('classes').select('*'),
+      supabase.from('subjects').select('*')
+    ]);
+    
+    if (classesResult.data) setClasses(classesResult.data);
+    if (subjectsResult.data) setSubjects(subjectsResult.data);
+  };
+
+  const loadLearners = async () => {
+    if (!selectedClassId) return;
+    
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('learners')
+      .select(`
+        *,
+        profile:profiles(first_name, last_name, email),
+        class:classes(name, grade_level)
+      `)
+      .eq('class_id', selectedClassId);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    } else {
+      setLearners(data || []);
+    }
+    setLoading(false);
+  };
+
+  const handleEditLearner = (learner: any) => {
+    setEditingLearner(learner);
+    setEditForm({
+      student_number: learner.student_number || '',
+      full_name: learner['Student FullName'] || '',
+      emergency_contact: learner.emergency_contact || '',
+      address: learner.address || '',
+      date_of_birth: learner.date_of_birth || '',
+      class_id: learner.class_id || ''
+    });
+  };
+
+  const handleUpdateLearner = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingLearner) return;
+    
+    setLoading(true);
+    const { error } = await supabase
+      .from('learners')
+      .update({
+        student_number: editForm.student_number,
+        'Student FullName': editForm.full_name,
+        emergency_contact: editForm.emergency_contact,
+        address: editForm.address,
+        date_of_birth: editForm.date_of_birth || null,
+        class_id: editForm.class_id
+      })
+      .eq('id', editingLearner.id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Student record updated successfully!",
+      });
+      setEditingLearner(null);
+      loadLearners();
+    }
+    setLoading(false);
+  };
+
+  const handleDeleteLearner = async (learnerId: string) => {
+    if (!confirm('Are you sure you want to delete this student record?')) return;
+    
+    setLoading(true);
+    const { error } = await supabase
+      .from('learners')
+      .delete()
+      .eq('id', learnerId);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Student record deleted successfully!",
+      });
+      loadLearners();
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <Users className="h-6 w-6" />
+            Manage Students
+          </h2>
+          <p className="text-muted-foreground">View and edit student records by class</p>
+        </div>
+      </div>
+
+      {/* Class and Subject Filter */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Filter by Class & Subject
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="class-filter">Select Class</Label>
+              <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a class to view students" />
+                </SelectTrigger>
+                <SelectContent>
+                  {classes.map((cls) => (
+                    <SelectItem key={cls.id} value={cls.id}>
+                      {cls.name} (Grade {cls.grade_level})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="subject-filter">Select Subject (Optional)</Label>
+              <Select value={selectedSubjectId} onValueChange={setSelectedSubjectId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by subject" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Subjects</SelectItem>
+                  {subjects.map((subject) => (
+                    <SelectItem key={subject.id} value={subject.id}>
+                      {subject.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Students Table */}
+      {selectedClassId && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              Students in {classes.find(c => c.id === selectedClassId)?.name}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Student Number</TableHead>
+                    <TableHead>Full Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Emergency Contact</TableHead>
+                    <TableHead>Date of Birth</TableHead>
+                    <TableHead className="w-[120px]">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {learners.map((learner) => (
+                    <TableRow key={learner.id}>
+                      <TableCell className="font-medium">{learner.student_number}</TableCell>
+                      <TableCell>
+                        {learner['Student FullName'] || 
+                         `${learner.profile?.first_name} ${learner.profile?.last_name}`}
+                      </TableCell>
+                      <TableCell>{learner.profile?.email}</TableCell>
+                      <TableCell>{learner.emergency_contact}</TableCell>
+                      <TableCell>
+                        {learner.date_of_birth ? 
+                         new Date(learner.date_of_birth).toLocaleDateString() : 
+                         'Not set'}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditLearner(learner)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-md">
+                              <DialogHeader>
+                                <DialogTitle>Edit Student Record</DialogTitle>
+                              </DialogHeader>
+                              <form onSubmit={handleUpdateLearner} className="space-y-4">
+                                <div className="space-y-2">
+                                  <Label htmlFor="student_number">Student Number</Label>
+                                  <Input
+                                    id="student_number"
+                                    value={editForm.student_number}
+                                    onChange={(e) => setEditForm({...editForm, student_number: e.target.value})}
+                                    required
+                                  />
+                                </div>
+                                
+                                <div className="space-y-2">
+                                  <Label htmlFor="full_name">Full Name</Label>
+                                  <Input
+                                    id="full_name"
+                                    value={editForm.full_name}
+                                    onChange={(e) => setEditForm({...editForm, full_name: e.target.value})}
+                                  />
+                                </div>
+                                
+                                <div className="space-y-2">
+                                  <Label htmlFor="emergency_contact">Emergency Contact</Label>
+                                  <Input
+                                    id="emergency_contact"
+                                    value={editForm.emergency_contact}
+                                    onChange={(e) => setEditForm({...editForm, emergency_contact: e.target.value})}
+                                  />
+                                </div>
+                                
+                                <div className="space-y-2">
+                                  <Label htmlFor="address">Address</Label>
+                                  <Input
+                                    id="address"
+                                    value={editForm.address}
+                                    onChange={(e) => setEditForm({...editForm, address: e.target.value})}
+                                  />
+                                </div>
+                                
+                                <div className="space-y-2">
+                                  <Label htmlFor="date_of_birth">Date of Birth</Label>
+                                  <Input
+                                    id="date_of_birth"
+                                    type="date"
+                                    value={editForm.date_of_birth}
+                                    onChange={(e) => setEditForm({...editForm, date_of_birth: e.target.value})}
+                                  />
+                                </div>
+                                
+                                <div className="space-y-2">
+                                  <Label htmlFor="class_id">Class</Label>
+                                  <Select 
+                                    value={editForm.class_id} 
+                                    onValueChange={(value) => setEditForm({...editForm, class_id: value})}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select class" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {classes.map((cls) => (
+                                        <SelectItem key={cls.id} value={cls.id}>
+                                          {cls.name} (Grade {cls.grade_level})
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                
+                                <div className="flex gap-2">
+                                  <Button type="submit" disabled={loading}>
+                                    {loading ? "Updating..." : "Update"}
+                                  </Button>
+                                  <Button 
+                                    type="button" 
+                                    variant="outline" 
+                                    onClick={() => setEditingLearner(null)}
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              </form>
+                            </DialogContent>
+                          </Dialog>
+                          
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteLearner(learner.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              
+              {learners.length === 0 && !loading && selectedClassId && (
+                <div className="text-center py-8 text-muted-foreground">
+                  No students found in this class.
+                </div>
+              )}
+              
+              {!selectedClassId && (
+                <div className="text-center py-8 text-muted-foreground">
+                  Please select a class to view students.
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+};
+
+export default ManageStudents;

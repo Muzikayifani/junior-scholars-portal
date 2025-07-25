@@ -3,7 +3,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import CreateAssessment from './CreateAssessment';
 import ClassSchedule from './ClassSchedule';
-import { BookOpen, Calendar, ClipboardList, Users, Award } from 'lucide-react';
+import ManageStudents from './ManageStudents';
+import ManageClasses from './ManageClasses';
+import { BookOpen, Calendar, ClipboardList, Users, Award, Settings } from 'lucide-react';
 
 const TeacherPortal = () => {
   const [refreshKey, setRefreshKey] = useState(0);
@@ -67,16 +69,26 @@ const TeacherPortal = () => {
       </div>
 
       <Tabs defaultValue="assessments" className="w-full">
-        <TabsList className="grid w-full grid-cols-1 md:grid-cols-2">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
           <TabsTrigger value="assessments" className="flex items-center gap-2">
             <ClipboardList className="h-4 w-4" />
-            <span className="hidden sm:inline">Create Assessments</span>
-            <span className="sm:hidden">Assessments</span>
+            <span className="hidden sm:inline">Assessments</span>
+            <span className="sm:hidden">Tests</span>
           </TabsTrigger>
           <TabsTrigger value="schedule" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            <span className="hidden sm:inline">Class Schedule</span>
-            <span className="sm:hidden">Schedule</span>
+            <span className="hidden sm:inline">Schedule</span>
+            <span className="sm:hidden">Time</span>
+          </TabsTrigger>
+          <TabsTrigger value="students" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            <span className="hidden sm:inline">Students</span>
+            <span className="sm:hidden">Students</span>
+          </TabsTrigger>
+          <TabsTrigger value="classes" className="flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            <span className="hidden sm:inline">Classes</span>
+            <span className="sm:hidden">Classes</span>
           </TabsTrigger>
         </TabsList>
         
@@ -86,6 +98,14 @@ const TeacherPortal = () => {
         
         <TabsContent value="schedule" className="space-y-4">
           <ClassSchedule />
+        </TabsContent>
+        
+        <TabsContent value="students" className="space-y-4">
+          <ManageStudents />
+        </TabsContent>
+        
+        <TabsContent value="classes" className="space-y-4">
+          <ManageClasses />
         </TabsContent>
       </Tabs>
     </div>
