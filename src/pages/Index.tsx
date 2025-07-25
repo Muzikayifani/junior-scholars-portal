@@ -30,10 +30,10 @@ const Index = () => {
         </div>
 
         <div className="grid gap-8 md:grid-cols-3 max-w-4xl mx-auto mb-16">
-          <Card>
+          <Card className="group cursor-pointer transition-all duration-300 hover:shadow-[0_0_20px_hsl(var(--orange-glow)/0.4)] hover:border-[hsl(var(--orange-glow))] hover:scale-105">
             <CardHeader className="text-center">
-              <BookOpen className="h-12 w-12 text-primary mx-auto mb-4" />
-              <CardTitle>For Learners</CardTitle>
+              <BookOpen className="h-12 w-12 text-primary mx-auto mb-4 group-hover:text-[hsl(var(--orange-glow))] transition-colors duration-300" />
+              <CardTitle className="group-hover:text-[hsl(var(--orange-glow))] transition-colors duration-300">For Learners</CardTitle>
               <CardDescription>
                 Access assignments, track progress, and view results
               </CardDescription>
@@ -48,10 +48,10 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="group cursor-pointer transition-all duration-300 hover:shadow-[0_0_20px_hsl(var(--orange-glow)/0.4)] hover:border-[hsl(var(--orange-glow))] hover:scale-105">
             <CardHeader className="text-center">
-              <Users className="h-12 w-12 text-primary mx-auto mb-4" />
-              <CardTitle>For Parents</CardTitle>
+              <Users className="h-12 w-12 text-primary mx-auto mb-4 group-hover:text-[hsl(var(--orange-glow))] transition-colors duration-300" />
+              <CardTitle className="group-hover:text-[hsl(var(--orange-glow))] transition-colors duration-300">For Parents</CardTitle>
               <CardDescription>
                 Monitor your children's academic journey
               </CardDescription>
@@ -66,10 +66,10 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="group cursor-pointer transition-all duration-300 hover:shadow-[0_0_20px_hsl(var(--orange-glow)/0.4)] hover:border-[hsl(var(--orange-glow))] hover:scale-105">
             <CardHeader className="text-center">
-              <Award className="h-12 w-12 text-primary mx-auto mb-4" />
-              <CardTitle>For Teachers</CardTitle>
+              <Award className="h-12 w-12 text-primary mx-auto mb-4 group-hover:text-[hsl(var(--orange-glow))] transition-colors duration-300" />
+              <CardTitle className="group-hover:text-[hsl(var(--orange-glow))] transition-colors duration-300">For Teachers</CardTitle>
               <CardDescription>
                 Manage classes and assess student performance
               </CardDescription>

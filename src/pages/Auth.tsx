@@ -114,6 +114,11 @@ const Auth = () => {
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Signing In..." : "Sign In"}
                 </Button>
+                <div className="text-center mt-4">
+                  <Button variant="link" className="text-sm text-muted-foreground hover:text-primary">
+                    Forgot Password?
+                  </Button>
+                </div>
               </form>
             </TabsContent>
             
