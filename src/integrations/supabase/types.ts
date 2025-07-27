@@ -156,6 +156,7 @@ export type Database = {
           id: string
           parent_id: string | null
           profile_id: string
+          "Student FullName": string | null
           student_number: string
           updated_at: string
         }
@@ -168,6 +169,7 @@ export type Database = {
           id?: string
           parent_id?: string | null
           profile_id: string
+          "Student FullName"?: string | null
           student_number: string
           updated_at?: string
         }
@@ -180,6 +182,7 @@ export type Database = {
           id?: string
           parent_id?: string | null
           profile_id?: string
+          "Student FullName"?: string | null
           student_number?: string
           updated_at?: string
         }
