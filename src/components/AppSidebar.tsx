@@ -71,16 +71,16 @@ export function AppSidebar() {
 
   const getNavClassName = ({ isActive }: { isActive: boolean }) =>
     isActive 
-      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" 
-      : "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground";
+      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium transform scale-105 shadow-sm" 
+      : "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground hover:transform hover:scale-105 hover:shadow-sm transition-all duration-200";
 
   return (
     <Sidebar>
-      <SidebarContent>
-        <div className="p-4 border-b">
+      <SidebarContent className="animate-fade-in">
+        <div className="p-4 border-b hover-lift">
           <div className="flex items-center gap-2">
-            <GraduationCap className="h-6 w-6 text-sidebar-primary" />
-            <span className="font-semibold text-sidebar-foreground">
+            <GraduationCap className="h-6 w-6 text-sidebar-primary transition-all duration-300 hover:scale-110 hover:text-primary" />
+            <span className="font-semibold text-sidebar-foreground bg-gradient-primary bg-clip-text text-transparent">
               Junior Scholars
             </span>
           </div>
