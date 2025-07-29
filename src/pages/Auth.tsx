@@ -71,25 +71,29 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-primary p-4 animate-fade-in">
+      <Card className="w-full max-w-md glass-card hover-glow animate-scale-in">
         <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <GraduationCap className="h-12 w-12 text-primary" />
+          <div className="flex justify-center mb-4 animate-bounce-in">
+            <div className="p-3 rounded-full bg-primary/10 hover:bg-primary/20 transition-all duration-300">
+              <GraduationCap className="h-12 w-12 text-primary" />
+            </div>
           </div>
-          <CardTitle className="text-2xl">Junior Scholars Portal</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-2xl bg-gradient-primary bg-clip-text text-transparent">
+            Junior Scholars Portal
+          </CardTitle>
+          <CardDescription className="animate-slide-up">
             Access your learning journey
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 glass-card">
+              <TabsTrigger value="signin" className="transition-all duration-200 hover:scale-105">Sign In</TabsTrigger>
+              <TabsTrigger value="signup" className="transition-all duration-200 hover:scale-105">Sign Up</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="signin">
+            <TabsContent value="signin" className="animate-fade-in">
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="signin-email">Email</Label>
@@ -98,6 +102,7 @@ const Auth = () => {
                     name="signin-email"
                     type="email"
                     placeholder="Enter your email"
+                    className="transition-all duration-200 focus:scale-[1.02]"
                     required
                   />
                 </div>
@@ -108,21 +113,26 @@ const Auth = () => {
                     name="signin-password"
                     type="password"
                     placeholder="Enter your password"
+                    className="transition-all duration-200 focus:scale-[1.02]"
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button 
+                  type="submit" 
+                  className="w-full btn-gradient hover-lift" 
+                  disabled={loading}
+                >
                   {loading ? "Signing In..." : "Sign In"}
                 </Button>
                 <div className="text-center mt-4">
-                  <Button variant="link" className="text-sm text-muted-foreground hover:text-primary">
+                  <Button variant="link" className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200">
                     Forgot Password?
                   </Button>
                 </div>
               </form>
             </TabsContent>
             
-            <TabsContent value="signup">
+            <TabsContent value="signup" className="animate-fade-in">
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -131,6 +141,7 @@ const Auth = () => {
                       id="first-name"
                       name="first-name"
                       placeholder="First name"
+                      className="transition-all duration-200 focus:scale-[1.02]"
                       required
                     />
                   </div>
@@ -140,6 +151,7 @@ const Auth = () => {
                       id="last-name"
                       name="last-name"
                       placeholder="Last name"
+                      className="transition-all duration-200 focus:scale-[1.02]"
                       required
                     />
                   </div>
@@ -147,7 +159,7 @@ const Auth = () => {
                 <div className="space-y-2">
                   <Label htmlFor="role">Role</Label>
                   <Select name="role" required>
-                    <SelectTrigger>
+                    <SelectTrigger className="transition-all duration-200 hover:scale-[1.02]">
                       <SelectValue placeholder="Select your role" />
                     </SelectTrigger>
                     <SelectContent>
@@ -165,6 +177,7 @@ const Auth = () => {
                     name="signup-email"
                     type="email"
                     placeholder="Enter your email"
+                    className="transition-all duration-200 focus:scale-[1.02]"
                     required
                   />
                 </div>
@@ -175,10 +188,15 @@ const Auth = () => {
                     name="signup-password"
                     type="password"
                     placeholder="Create a password"
+                    className="transition-all duration-200 focus:scale-[1.02]"
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button 
+                  type="submit" 
+                  className="w-full btn-gradient hover-lift" 
+                  disabled={loading}
+                >
                   {loading ? "Creating Account..." : "Create Account"}
                 </Button>
               </form>
