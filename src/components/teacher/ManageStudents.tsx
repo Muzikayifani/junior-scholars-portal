@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Users, Edit, Trash2, Filter } from 'lucide-react';
+import { Users, Edit, Trash2, Filter, UserPlus } from 'lucide-react';
 
 const ManageStudents = () => {
   const { profile } = useAuth();
@@ -21,9 +21,21 @@ const ManageStudents = () => {
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('');
   const [editingLearner, setEditingLearner] = useState<any>(null);
+  const [showAddStudent, setShowAddStudent] = useState(false);
   const [editForm, setEditForm] = useState({
     student_number: '',
     full_name: '',
+    emergency_contact: '',
+    address: '',
+    date_of_birth: '',
+    class_id: ''
+  });
+  const [addForm, setAddForm] = useState({
+    student_number: '',
+    full_name: '',
+    email: '',
+    first_name: '',
+    last_name: '',
     emergency_contact: '',
     address: '',
     date_of_birth: '',
@@ -148,6 +160,91 @@ const ManageStudents = () => {
     setLoading(false);
   };
 
+  const handleAddStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!addForm.class_id) {
+      toast({
+        title: "Error",
+        description: "Please select a class for the student",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      // First create the user profile
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: addForm.email,
+        password: 'TempPass123!', // Temporary password - should be changed on first login
+        options: {
+          data: {
+            first_name: addForm.first_name,
+            last_name: addForm.last_name,
+            role: 'learner'
+          }
+        }
+      });
+
+      if (authError) throw authError;
+
+      // Wait a bit for the profile to be created via trigger
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Get the created profile
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', addForm.email)
+        .single();
+
+      if (profileError) throw profileError;
+
+      // Create the learner record
+      const { error: learnerError } = await supabase
+        .from('learners')
+        .insert({
+          student_number: addForm.student_number,
+          'Student FullName': addForm.full_name,
+          emergency_contact: addForm.emergency_contact,
+          address: addForm.address,
+          date_of_birth: addForm.date_of_birth || null,
+          class_id: addForm.class_id,
+          profile_id: profileData.id
+        });
+
+      if (learnerError) throw learnerError;
+
+      toast({
+        title: "Success",
+        description: "Student added successfully! They can login with the email and temporary password: TempPass123!",
+      });
+      
+      setShowAddStudent(false);
+      setAddForm({
+        student_number: '',
+        full_name: '',
+        email: '',
+        first_name: '',
+        last_name: '',
+        emergency_contact: '',
+        address: '',
+        date_of_birth: '',
+        class_id: ''
+      });
+      loadLearners();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+    
+    setLoading(false);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -158,6 +255,134 @@ const ManageStudents = () => {
           </h2>
           <p className="text-muted-foreground">View and edit student records by class</p>
         </div>
+        
+        <Dialog open={showAddStudent} onOpenChange={setShowAddStudent}>
+          <DialogTrigger asChild>
+            <Button className="flex items-center gap-2">
+              <UserPlus className="h-4 w-4" />
+              Add New Student
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Add New Student</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleAddStudent} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="add_first_name">First Name</Label>
+                  <Input
+                    id="add_first_name"
+                    value={addForm.first_name}
+                    onChange={(e) => setAddForm({...addForm, first_name: e.target.value})}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="add_last_name">Last Name</Label>
+                  <Input
+                    id="add_last_name"
+                    value={addForm.last_name}
+                    onChange={(e) => setAddForm({...addForm, last_name: e.target.value})}
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="add_email">Email</Label>
+                <Input
+                  id="add_email"
+                  type="email"
+                  value={addForm.email}
+                  onChange={(e) => setAddForm({...addForm, email: e.target.value})}
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="add_student_number">Student Number</Label>
+                <Input
+                  id="add_student_number"
+                  value={addForm.student_number}
+                  onChange={(e) => setAddForm({...addForm, student_number: e.target.value})}
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="add_full_name">Display Name (Optional)</Label>
+                <Input
+                  id="add_full_name"
+                  value={addForm.full_name}
+                  onChange={(e) => setAddForm({...addForm, full_name: e.target.value})}
+                  placeholder="Will use First + Last name if empty"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="add_class_id">Class</Label>
+                <Select 
+                  value={addForm.class_id} 
+                  onValueChange={(value) => setAddForm({...addForm, class_id: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select class" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {classes.map((cls) => (
+                      <SelectItem key={cls.id} value={cls.id}>
+                        {cls.name} (Grade {cls.grade_level})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="add_emergency_contact">Emergency Contact</Label>
+                <Input
+                  id="add_emergency_contact"
+                  value={addForm.emergency_contact}
+                  onChange={(e) => setAddForm({...addForm, emergency_contact: e.target.value})}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="add_address">Address</Label>
+                <Input
+                  id="add_address"
+                  value={addForm.address}
+                  onChange={(e) => setAddForm({...addForm, address: e.target.value})}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="add_date_of_birth">Date of Birth</Label>
+                <Input
+                  id="add_date_of_birth"
+                  type="date"
+                  value={addForm.date_of_birth}
+                  onChange={(e) => setAddForm({...addForm, date_of_birth: e.target.value})}
+                />
+              </div>
+              
+              <div className="flex gap-2">
+                <Button type="submit" disabled={loading}>
+                  {loading ? "Adding..." : "Add Student"}
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setShowAddStudent(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Class and Subject Filter */}
