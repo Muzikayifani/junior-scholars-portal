@@ -46,7 +46,7 @@ const CreateAssessment = ({ onAssessmentCreated }: CreateAssessmentProps) => {
     const data = {
       title: formData.get('title') as string,
       description: formData.get('description') as string,
-      type: formData.get('type') as 'assignment' | 'homework' | 'test' | 'exam',
+      type: formData.get('type') as 'quiz' | 'test' | 'assignment' | 'exam',
       class_id: formData.get('class_id') as string,
       subject_id: formData.get('subject_id') as string,
       total_marks: parseInt(formData.get('total_marks') as string) || 100,
@@ -106,8 +106,8 @@ const CreateAssessment = ({ onAssessmentCreated }: CreateAssessmentProps) => {
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="quiz">Quiz</SelectItem>
                   <SelectItem value="assignment">Assignment</SelectItem>
-                  <SelectItem value="homework">Homework</SelectItem>
                   <SelectItem value="test">Test</SelectItem>
                   <SelectItem value="exam">Exam</SelectItem>
                 </SelectContent>

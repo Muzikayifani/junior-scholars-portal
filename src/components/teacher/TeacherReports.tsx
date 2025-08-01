@@ -65,15 +65,26 @@ const TeacherReports = () => {
       // Get assessments for this class
       const { data: assessments, error: assessmentsError } = await supabase
         .from('assessments')
-        .select(`
-          *,
-          subject:subjects(name, code),
-          results(*)
-        `)
+        .select('*')
         .eq('class_id', selectedClassId)
         .eq('teacher_id', profile?.id);
 
       if (assessmentsError) throw assessmentsError;
+
+      // Get subjects separately
+      const { data: subjects, error: subjectsError } = await supabase
+        .from('subjects')
+        .select('*');
+
+      if (subjectsError) throw subjectsError;
+
+      // Get results separately
+      const { data: results, error: resultsError } = await supabase
+        .from('results')
+        .select('*')
+        .in('assessment_id', assessments?.map(a => a.id) || []);
+
+      if (resultsError) throw resultsError;
 
       // Calculate class statistics
       const totalStudents = learners?.length || 0;
@@ -84,8 +95,18 @@ const TeacherReports = () => {
       let totalMarks = 0;
       let totalPossibleMarks = 0;
 
-      assessments?.forEach(assessment => {
-        assessment.results?.forEach((result: any) => {
+      // Create subject map for easy lookup
+      const subjectMap = new Map(subjects?.map(s => [s.id, s]) || []);
+
+      // Associate results with assessments and calculate stats
+      const assessmentsWithResults = assessments?.map(assessment => ({
+        ...assessment,
+        subject: subjectMap.get(assessment.subject_id),
+        results: results?.filter(r => r.assessment_id === assessment.id) || []
+      })) || [];
+
+      assessmentsWithResults.forEach(assessment => {
+        assessment.results.forEach((result: any) => {
           totalSubmissions++;
           if (result.status === 'graded' && result.marks_obtained !== null) {
             gradedSubmissions++;
@@ -108,12 +129,12 @@ const TeacherReports = () => {
       });
 
       // Calculate subject performance
-      const subjectMap = new Map();
-      assessments?.forEach(assessment => {
+      const subjectStatsMap = new Map();
+      assessmentsWithResults.forEach(assessment => {
         const subjectName = assessment.subject?.name || 'Unknown';
         
-        if (!subjectMap.has(subjectName)) {
-          subjectMap.set(subjectName, {
+        if (!subjectStatsMap.has(subjectName)) {
+          subjectStatsMap.set(subjectName, {
             name: subjectName,
             assessments: 0,
             totalMarks: 0,
@@ -122,10 +143,10 @@ const TeacherReports = () => {
           });
         }
         
-        const subject = subjectMap.get(subjectName);
+        const subject = subjectStatsMap.get(subjectName);
         subject.assessments++;
         
-        assessment.results?.forEach((result: any) => {
+        assessment.results.forEach((result: any) => {
           if (result.status === 'graded' && result.marks_obtained !== null) {
             subject.totalMarks += result.marks_obtained;
             subject.totalPossible += assessment.total_marks;
@@ -134,7 +155,7 @@ const TeacherReports = () => {
         });
       });
 
-      const subjectPerf = Array.from(subjectMap.values()).map((subject: any) => ({
+      const subjectPerf = Array.from(subjectStatsMap.values()).map((subject: any) => ({
         ...subject,
         average: subject.totalPossible > 0 ? 
           Math.round((subject.totalMarks / subject.totalPossible) * 100) : 0
@@ -143,7 +164,7 @@ const TeacherReports = () => {
       setSubjectPerformance(subjectPerf);
 
       // Assessment overview
-      const assessmentOverv = assessments?.map(assessment => {
+      const assessmentOverv = assessmentsWithResults.map(assessment => {
         const results = assessment.results || [];
         const gradedResults = results.filter((r: any) => r.status === 'graded' && r.marks_obtained !== null);
         
@@ -157,13 +178,13 @@ const TeacherReports = () => {
           id: assessment.id,
           title: assessment.title,
           type: assessment.type,
-          subject: assessment.subject?.name,
+          subject: assessment.subject?.name || 'Unknown',
           totalSubmissions: results.length,
           gradedSubmissions: gradedResults.length,
           averageScore,
           dueDate: assessment.due_date
         };
-      }) || [];
+      });
 
       setAssessmentOverview(assessmentOverv);
 
