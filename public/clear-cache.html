@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Application Cache</title>
+</head>
+<body>
+    <h1>Clearing Application Cache...</h1>
+    <script>
+        // Clear all localStorage
+        localStorage.clear();
+        
+        // Clear all sessionStorage
+        sessionStorage.clear();
+        
+        // Clear indexedDB if it exists
+        if ('indexedDB' in window) {
+            indexedDB.deleteDatabase('keyval-store');
+        }
+        
+        // Clear service worker cache if it exists
+        if ('caches' in window) {
+            caches.keys().then(names => {
+                names.forEach(name => {
+                    caches.delete(name);
+                });
+            });
+        }
+        
+        alert('Application cache cleared successfully!');
+        window.close();
+    </script>
+</body>
+</html>
