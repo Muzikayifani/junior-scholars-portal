@@ -1,0 +1,367 @@
+import { useEffect, useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase } from '@/integrations/supabase/client';
+import { ClipboardList, Calendar, Clock, CheckCircle, AlertCircle, BookOpen } from 'lucide-react';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import { format } from 'date-fns';
+
+interface Assignment {
+  id: string;
+  title: string;
+  description?: string;
+  due_date?: string;
+  total_marks: number;
+  type: string;
+  subject_name?: string;
+  class_name?: string;
+  teacher_name?: string;
+  status?: 'pending' | 'submitted' | 'graded';
+  marks_obtained?: number;
+  submitted_at?: string;
+}
+
+export default function Assignments() {
+  const { profile, user, loading: authLoading } = useAuth();
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (profile && user) {
+      fetchAssignments();
+    }
+  }, [profile, user]);
+
+  const fetchAssignments = async () => {
+    try {
+      setLoading(true);
+      
+      if (profile?.role === 'teacher') {
+        // Teachers see all assessments they've created
+        const { data, error } = await supabase
+          .from('assessments')
+          .select(`
+            id,
+            title,
+            description,
+            due_date,
+            total_marks,
+            type,
+            subjects (name),
+            classes (name)
+          `)
+          .eq('teacher_id', profile.id)
+          .order('due_date', { ascending: true });
+
+        if (error) throw error;
+        
+        const formattedData = data?.map(item => ({
+          id: item.id,
+          title: item.title,
+          description: item.description,
+          due_date: item.due_date,
+          total_marks: item.total_marks,
+          type: item.type,
+          subject_name: item.subjects?.name,
+          class_name: item.classes?.name
+        })) || [];
+        
+        setAssignments(formattedData);
+      } else if (profile?.role === 'learner') {
+        // Learners see assessments for their class with their results
+        const { data: learnerData, error: learnerError } = await supabase
+          .from('learners')
+          .select('id, class_id')
+          .eq('profile_id', profile.id)
+          .single();
+
+        if (learnerError) throw learnerError;
+        
+        if (learnerData?.class_id) {
+          const { data, error } = await supabase
+            .from('assessments')
+            .select(`
+              id,
+              title,
+              description,
+              due_date,
+              total_marks,
+              type,
+              subjects (name),
+              classes (name),
+              results!results_assessment_id_fkey (
+                status,
+                marks_obtained,
+                submitted_at
+              )
+            `)
+            .eq('class_id', learnerData.class_id)
+            .order('due_date', { ascending: true });
+
+          if (error) throw error;
+          
+          const formattedData = data?.map(item => ({
+            id: item.id,
+            title: item.title,
+            description: item.description,
+            due_date: item.due_date,
+            total_marks: item.total_marks,
+            type: item.type,
+            subject_name: item.subjects?.name,
+            class_name: item.classes?.name,
+            status: item.results?.[0]?.status || 'pending',
+            marks_obtained: item.results?.[0]?.marks_obtained,
+            submitted_at: item.results?.[0]?.submitted_at
+          })) || [];
+          
+          setAssignments(formattedData);
+        }
+      } else if (profile?.role === 'parent') {
+        // Parents see their children's assignments
+        const { data: childrenData, error: childrenError } = await supabase
+          .from('learners')
+          .select(`
+            id,
+            class_id,
+            classes (name),
+            profiles (first_name, last_name)
+          `)
+          .eq('parent_id', profile.id);
+
+        if (childrenError) throw childrenError;
+        
+        if (childrenData && childrenData.length > 0) {
+          const classIds = childrenData.map(child => child.class_id).filter(Boolean);
+          
+          const { data, error } = await supabase
+            .from('assessments')
+            .select(`
+              id,
+              title,
+              description,
+              due_date,
+              total_marks,
+              type,
+              class_id,
+              subjects (name),
+              classes (name)
+            `)
+            .in('class_id', classIds)
+            .order('due_date', { ascending: true });
+
+          if (error) throw error;
+          
+          const formattedData = data?.map(item => ({
+            id: item.id,
+            title: item.title,
+            description: item.description,
+            due_date: item.due_date,
+            total_marks: item.total_marks,
+            type: item.type,
+            subject_name: item.subjects?.name,
+            class_name: item.classes?.name
+          })) || [];
+          
+          setAssignments(formattedData);
+        }
+      }
+    } catch (error: any) {
+      console.error('Error fetching assignments:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (authLoading || loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  const getStatusIcon = (status?: string) => {
+    switch (status) {
+      case 'submitted':
+        return <CheckCircle className="h-4 w-4 text-success" />;
+      case 'graded':
+        return <CheckCircle className="h-4 w-4 text-info" />;
+      default:
+        return <AlertCircle className="h-4 w-4 text-orange-500" />;
+    }
+  };
+
+  const getStatusBadge = (status?: string, dueDate?: string) => {
+    if (status === 'graded') return <Badge className="bg-info text-info-foreground">Graded</Badge>;
+    if (status === 'submitted') return <Badge className="bg-success text-success-foreground">Submitted</Badge>;
+    
+    if (dueDate) {
+      const isOverdue = new Date(dueDate) < new Date();
+      return (
+        <Badge variant={isOverdue ? "destructive" : "secondary"}>
+          {isOverdue ? "Overdue" : "Pending"}
+        </Badge>
+      );
+    }
+    
+    return <Badge variant="secondary">Pending</Badge>;
+  };
+
+  const pendingAssignments = assignments.filter(a => a.status === 'pending' || !a.status);
+  const submittedAssignments = assignments.filter(a => a.status === 'submitted');
+  const gradedAssignments = assignments.filter(a => a.status === 'graded');
+
+  const renderAssignmentCard = (assignment: Assignment) => (
+    <Card key={assignment.id} className="hover-lift">
+      <CardHeader>
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <CardTitle className="text-lg">{assignment.title}</CardTitle>
+            <CardDescription className="mt-1">
+              {assignment.subject_name} • {assignment.class_name}
+            </CardDescription>
+          </div>
+          <div className="flex flex-col gap-2 items-end">
+            {getStatusBadge(assignment.status, assignment.due_date)}
+            <Badge variant="outline" className="text-xs">
+              {assignment.type}
+            </Badge>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {assignment.description && (
+          <p className="text-sm text-muted-foreground line-clamp-2">
+            {assignment.description}
+          </p>
+        )}
+        
+        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          {assignment.due_date && (
+            <div className="flex items-center gap-1">
+              <Calendar className="h-4 w-4" />
+              <span>Due: {format(new Date(assignment.due_date), 'MMM d, yyyy')}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-1">
+            <BookOpen className="h-4 w-4" />
+            <span>{assignment.total_marks} marks</span>
+          </div>
+        </div>
+        
+        {assignment.status === 'graded' && assignment.marks_obtained !== undefined && (
+          <div className="flex items-center gap-2 p-3 bg-info/10 rounded-lg">
+            <CheckCircle className="h-4 w-4 text-info" />
+            <span className="text-sm font-medium">
+              Score: {assignment.marks_obtained}/{assignment.total_marks} 
+              ({Math.round((assignment.marks_obtained / assignment.total_marks) * 100)}%)
+            </span>
+          </div>
+        )}
+        
+        {assignment.submitted_at && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Clock className="h-4 w-4" />
+            <span>Submitted: {format(new Date(assignment.submitted_at), 'MMM d, yyyy h:mm a')}</span>
+          </div>
+        )}
+        
+        <div className="flex gap-2 pt-2">
+          <Button variant="outline" size="sm" className="flex-1">
+            View Details
+          </Button>
+          {profile?.role === 'learner' && assignment.status === 'pending' && (
+            <Button size="sm" className="flex-1 btn-gradient">
+              Submit Work
+            </Button>
+          )}
+          {profile?.role === 'teacher' && (
+            <Button size="sm" className="flex-1 btn-gradient">
+              Manage
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  return (
+    <div className="animate-fade-in p-6 space-y-6">
+      <div className="flex items-center gap-2 mb-6">
+        <ClipboardList className="h-6 w-6 text-primary" />
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">
+            {profile?.role === 'teacher' ? 'My Assessments' : 'Assignments'}
+          </h1>
+          <p className="text-muted-foreground">
+            {profile?.role === 'teacher' 
+              ? 'Manage and track your assessments'
+              : profile?.role === 'parent'
+              ? 'Track your children\'s assignments'
+              : 'Your assignments and submissions'
+            }
+          </p>
+        </div>
+      </div>
+
+      {assignments.length === 0 ? (
+        <Card className="text-center py-12">
+          <CardContent>
+            <ClipboardList className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Assignments Found</h3>
+            <p className="text-muted-foreground mb-4">
+              {profile?.role === 'teacher' 
+                ? "You haven't created any assessments yet."
+                : "No assignments have been assigned yet."
+              }
+            </p>
+            {profile?.role === 'teacher' && (
+              <Button className="btn-gradient">
+                Create Assessment
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      ) : profile?.role === 'learner' ? (
+        <Tabs defaultValue="pending" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="pending">
+              Pending ({pendingAssignments.length})
+            </TabsTrigger>
+            <TabsTrigger value="submitted">
+              Submitted ({submittedAssignments.length})
+            </TabsTrigger>
+            <TabsTrigger value="graded">
+              Graded ({gradedAssignments.length})
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="pending" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {pendingAssignments.map(renderAssignmentCard)}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="submitted" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {submittedAssignments.map(renderAssignmentCard)}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="graded" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {gradedAssignments.map(renderAssignmentCard)}
+            </div>
+          </TabsContent>
+        </Tabs>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {assignments.map(renderAssignmentCard)}
+        </div>
+      )}
+    </div>
+  );
+}
