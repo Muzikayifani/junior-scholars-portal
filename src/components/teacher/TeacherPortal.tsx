@@ -6,7 +6,8 @@ import ClassSchedule from './ClassSchedule';
 import ManageStudents from './ManageStudents';
 import ManageClasses from './ManageClasses';
 import AssessmentManagement from './AssessmentManagement';
-import GradeManagement from './GradeManagement';
+import GradeBook from './GradeBook';
+import GradeAnalytics from './GradeAnalytics';
 import TeacherReports from './TeacherReports';
 import StudentProgressTracking from './StudentProgressTracking';
 import { BookOpen, Calendar, ClipboardList, Users, Award, Settings, TrendingUp, BarChart3, FileText } from 'lucide-react';
@@ -73,7 +74,7 @@ const TeacherPortal = () => {
       </div>
 
       <Tabs defaultValue="assessments" className="w-full animate-bounce-in">
-        <TabsList className="grid w-full grid-cols-3 md:grid-cols-4 lg:grid-cols-7 glass-card">
+        <TabsList className="grid w-full grid-cols-3 md:grid-cols-4 lg:grid-cols-8 glass-card">
           <TabsTrigger value="assessments" className="flex items-center gap-2 transition-all duration-200 hover:scale-105">
             <ClipboardList className="h-4 w-4 transition-all duration-300 hover:rotate-12" />
             <span className="hidden sm:inline">Create</span>
@@ -84,10 +85,15 @@ const TeacherPortal = () => {
             <span className="hidden sm:inline">Assessments</span>
             <span className="sm:hidden">Tests</span>
           </TabsTrigger>
-          <TabsTrigger value="grading" className="flex items-center gap-2 transition-all duration-200 hover:scale-105">
-            <Award className="h-4 w-4 transition-all duration-300 hover:rotate-12" />
-            <span className="hidden sm:inline">Grading</span>
-            <span className="sm:hidden">Grade</span>
+          <TabsTrigger value="gradebook" className="flex items-center gap-2 transition-all duration-200 hover:scale-105">
+            <BookOpen className="h-4 w-4 transition-all duration-300 hover:rotate-12" />
+            <span className="hidden sm:inline">Grade Book</span>
+            <span className="sm:hidden">Grades</span>
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-2 transition-all duration-200 hover:scale-105">
+            <BarChart3 className="h-4 w-4 transition-all duration-300 hover:rotate-12" />
+            <span className="hidden sm:inline">Analytics</span>
+            <span className="sm:hidden">Stats</span>
           </TabsTrigger>
           <TabsTrigger value="schedule" className="flex items-center gap-2 transition-all duration-200 hover:scale-105">
             <Calendar className="h-4 w-4 transition-all duration-300 hover:rotate-12" />
@@ -105,7 +111,7 @@ const TeacherPortal = () => {
             <span className="sm:hidden">Track</span>
           </TabsTrigger>
           <TabsTrigger value="reports" className="flex items-center gap-2 transition-all duration-200 hover:scale-105">
-            <BarChart3 className="h-4 w-4 transition-all duration-300 hover:rotate-12" />
+            <TrendingUp className="h-4 w-4 transition-all duration-300 hover:rotate-12" />
             <span className="hidden sm:inline">Reports</span>
             <span className="sm:hidden">Reports</span>
           </TabsTrigger>
@@ -119,8 +125,12 @@ const TeacherPortal = () => {
           <AssessmentManagement key={refreshKey} />
         </TabsContent>
         
-        <TabsContent value="grading" className="space-y-4 animate-fade-in">
-          <GradeManagement />
+        <TabsContent value="gradebook" className="space-y-4 animate-fade-in">
+          <GradeBook />
+        </TabsContent>
+        
+        <TabsContent value="analytics" className="space-y-4 animate-fade-in">
+          <GradeAnalytics />
         </TabsContent>
         
         <TabsContent value="schedule" className="space-y-4 animate-fade-in">
