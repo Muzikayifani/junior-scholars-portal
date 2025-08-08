@@ -22,25 +22,87 @@ const AssessmentManagement = () => {
     if (!profile) return;
     
     setLoading(true);
-    const { data, error } = await supabase
-      .from('assessments')
-      .select(`
-        *,
-        class:classes(name, grade_level),
-        subject:subjects(name, code)
-      `)
-      .eq('teacher_id', profile.id)
-      .order('created_at', { ascending: false });
+    
+    try {
+      if (profile.role === 'teacher') {
+        // Teachers see assessments they created
+        const { data, error } = await supabase
+          .from('assessments')
+          .select(`
+            *,
+            class:classes(name, grade_level),
+            subject:subjects(name, code)
+          `)
+          .eq('teacher_id', profile.id)
+          .order('created_at', { ascending: false });
 
-    if (error) {
+        if (error) throw error;
+        setAssessments(data || []);
+
+      } else if (profile.role === 'learner') {
+        // First get the learner's class_id
+        const { data: learnerData, error: learnerError } = await supabase
+          .from('learners')
+          .select('class_id')
+          .eq('profile_id', profile.id)
+          .single();
+
+        if (learnerError) throw learnerError;
+        
+        if (learnerData?.class_id) {
+          // Then get assessments for that class
+          const { data, error } = await supabase
+            .from('assessments')
+            .select(`
+              *,
+              class:classes(name, grade_level),
+              subject:subjects(name, code),
+              results(status, marks_obtained, submitted_at)
+            `)
+            .eq('class_id', learnerData.class_id)
+            .order('created_at', { ascending: false });
+
+          if (error) throw error;
+          setAssessments(data || []);
+        }
+
+      } else if (profile.role === 'parent') {
+        // First get children's class_ids
+        const { data: childrenData, error: childrenError } = await supabase
+          .from('learners')
+          .select('class_id')
+          .eq('parent_id', profile.id);
+
+        if (childrenError) throw childrenError;
+        
+        if (childrenData && childrenData.length > 0) {
+          const classIds = childrenData.map(child => child.class_id);
+          
+          // Then get assessments for those classes
+          const { data, error } = await supabase
+            .from('assessments')
+            .select(`
+              *,
+              class:classes(name, grade_level),
+              subject:subjects(name, code),
+              results(status, marks_obtained, submitted_at)
+            `)
+            .in('class_id', classIds)
+            .order('created_at', { ascending: false });
+
+          if (error) throw error;
+          setAssessments(data || []);
+        }
+      }
+
+    } catch (error: any) {
       toast({
         title: "Error",
         description: error.message,
         variant: "destructive"
       });
-    } else {
-      setAssessments(data || []);
     }
+    
     setLoading(false);
   };
 
@@ -100,13 +162,13 @@ const AssessmentManagement = () => {
             <FileText className="h-6 w-6" />
             Assessment Management
           </h2>
-          <p className="text-muted-foreground">View and manage your created assessments</p>
+          <p className="text-muted-foreground">View assessments {profile?.role === 'teacher' ? 'you created' : 'assigned to you'}</p>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Your Assessments</CardTitle>
+          <CardTitle>{profile?.role === 'teacher' ? 'Created Assessments' : 'Your Assessments'}</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -165,21 +227,25 @@ const AssessmentManagement = () => {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            title="Edit Assessment"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteAssessment(assessment.id)}
-                            title="Delete Assessment"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {profile?.role === 'teacher' && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                title="Edit Assessment"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDeleteAssessment(assessment.id)}
+                                title="Delete Assessment"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

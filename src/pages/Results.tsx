@@ -98,7 +98,7 @@ export default function Results() {
           .from('learners')
           .select(`
             id,
-            profiles (first_name, last_name),
+            profile_data:profiles!learners_profile_id_fkey (first_name, last_name),
             results!results_learner_id_fkey (
               id,
               marks_obtained,
@@ -133,7 +133,7 @@ export default function Results() {
                 assessment_type: result.assessments.type,
                 subject_name: result.assessments.subjects?.name,
                 class_name: result.assessments.classes?.name,
-                student_name: `${child.profiles?.first_name} ${child.profiles?.last_name}`
+                student_name: `${child.profile_data?.first_name} ${child.profile_data?.last_name}`
               });
             }
           });
@@ -160,7 +160,7 @@ export default function Results() {
               classes (name)
             ),
             learners!results_learner_id_fkey (
-              profiles (first_name, last_name)
+              profile_data:profiles!learners_profile_id_fkey (first_name, last_name)
             )
           `)
           .eq('assessments.teacher_id', profile.id)
@@ -180,7 +180,7 @@ export default function Results() {
           assessment_type: item.assessments.type,
           subject_name: item.assessments.subjects?.name,
           class_name: item.assessments.classes?.name,
-          student_name: `${item.learners?.profiles?.first_name} ${item.learners?.profiles?.last_name}`
+          student_name: `${item.learners?.profile_data?.first_name} ${item.learners?.profile_data?.last_name}`
         })) || [];
         
         setResults(formattedData);
