@@ -174,51 +174,66 @@ const ManageStudents = () => {
     setLoading(true);
     
     try {
-      // First create the user profile
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: addForm.email,
-        password: 'TempPass123!', // Temporary password - should be changed on first login
-        options: {
-          data: {
-            first_name: addForm.first_name,
-            last_name: addForm.last_name,
-            role: 'learner'
-          }
-        }
-      });
+      // Create learner profile directly (no auth signup). Teachers are allowed by RLS.
+      const generatedUserId = crypto.randomUUID();
+      const firstName = addForm.first_name.trim();
+      const lastName = addForm.last_name.trim();
+      const displayName = addForm.full_name?.trim() || `${firstName} ${lastName}`;
 
-      if (authError) throw authError;
-
-      // Wait a bit for the profile to be created via trigger
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Get the created profile
-      const { data: profileData, error: profileError } = await supabase
+      const { data: newProfile, error: profileInsertError } = await supabase
         .from('profiles')
+        .insert({
+          user_id: generatedUserId,
+          first_name: firstName,
+          last_name: lastName,
+          email: addForm.email,
+          role: 'learner'
+        })
         .select('id')
-        .eq('email', addForm.email)
         .single();
 
-      if (profileError) throw profileError;
+      if (profileInsertError) throw profileInsertError;
 
       // Create the learner record
-      const { error: learnerError } = await supabase
+      const { data: newLearner, error: learnerError } = await supabase
         .from('learners')
         .insert({
           student_number: addForm.student_number,
-          'Student FullName': addForm.full_name,
+          'Student FullName': displayName,
           emergency_contact: addForm.emergency_contact,
           address: addForm.address,
           date_of_birth: addForm.date_of_birth || null,
           class_id: addForm.class_id,
-          profile_id: profileData.id
-        });
+          profile_id: newProfile!.id
+        })
+        .select('id')
+        .single();
 
       if (learnerError) throw learnerError;
 
+      // Link the new learner to all existing assessments in this class by creating pending results
+      const { data: classAssessments, error: assessmentsError } = await supabase
+        .from('assessments')
+        .select('id')
+        .eq('class_id', addForm.class_id);
+
+      if (assessmentsError) throw assessmentsError;
+
+      if (classAssessments && classAssessments.length > 0) {
+        const resultsToInsert = classAssessments.map(a => ({
+          assessment_id: a.id,
+          learner_id: newLearner!.id,
+          status: 'pending' as any
+        }));
+        const { error: resultsError } = await supabase
+          .from('results')
+          .insert(resultsToInsert);
+        if (resultsError) throw resultsError;
+      }
+
       toast({
         title: "Success",
-        description: "Student added successfully! They can login with the email and temporary password: TempPass123!",
+        description: "Student added and linked to existing class assessments.",
       });
       
       setShowAddStudent(false);

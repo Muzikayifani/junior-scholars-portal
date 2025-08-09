@@ -351,7 +351,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_teacher: {
+        Args: { _user: string }
+        Returns: boolean
+      }
     }
     Enums: {
       assessment_status: "pending" | "submitted" | "graded"
