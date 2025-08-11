@@ -33,26 +33,27 @@ const ClassSchedule = () => {
 
   const loadData = async () => {
     if (!profile) return;
-    
-    // For now, just load classes and subjects since class_schedule table types aren't ready yet
-    const [classesResult, subjectsResult] = await Promise.all([
+    const [classesResult, subjectsResult, scheduleResult] = await Promise.all([
       supabase.from('classes').select('*'),
-      supabase.from('subjects').select('*')
+      supabase.from('subjects').select('*'),
+      supabase
+        .from('class_schedule')
+        .select(`
+          id, day_of_week, start_time, end_time,
+          class:classes(id, name, grade_level),
+          subject:subjects(id, name)
+        `)
+        .order('day_of_week', { ascending: true })
     ]);
-    
     if (classesResult.data) setClasses(classesResult.data);
     if (subjectsResult.data) setSubjects(subjectsResult.data);
-    
-    // Mock schedule data for now
-    setSchedule([]);
+    if (scheduleResult.data) setSchedule(scheduleResult.data);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile) return;
-    
     setLoading(true);
-    
     const formData = new FormData(e.target as HTMLFormElement);
     const data = {
       teacher_id: profile.id,
@@ -62,36 +63,28 @@ const ClassSchedule = () => {
       start_time: formData.get('start_time') as string,
       end_time: formData.get('end_time') as string,
     };
-
-    try {
-      // For now, just show a toast since the table types aren't ready yet
-      toast({
-        title: "Info",
-        description: "Schedule feature will be available once database types are updated. Your form data was validated successfully!",
-      });
-      
+    const { error } = await supabase.from('class_schedule').insert(data);
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Added to schedule' });
       (e.target as HTMLFormElement).reset();
       setShowForm(false);
       loadData();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "An error occurred while processing your request.",
-        variant: "destructive"
-      });
-      
-      (e.target as HTMLFormElement).reset();
-      setShowForm(false);
     }
-    
     setLoading(false);
   };
 
   const handleDelete = async (id: string) => {
-    toast({
-      title: "Info",
-      description: "Delete functionality will be available once database types are updated.",
-    });
+    setLoading(true);
+    const { error } = await supabase.from('class_schedule').delete().eq('id', id);
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Deleted' });
+      loadData();
+    }
+    setLoading(false);
   };
 
   const getDayName = (dayNumber: number) => {

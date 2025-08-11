@@ -232,6 +232,72 @@ export type Database = {
           },
         ]
       }
+      message_threads: {
+        Row: {
+          created_at: string
+          id: string
+          last_message_at: string
+          subject: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          subject?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          subject?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          attachments: Json | null
+          content: string
+          created_at: string
+          id: string
+          sender_profile_id: string
+          thread_id: string
+        }
+        Insert: {
+          attachments?: Json | null
+          content: string
+          created_at?: string
+          id?: string
+          sender_profile_id: string
+          thread_id: string
+        }
+        Update: {
+          attachments?: Json | null
+          content?: string
+          created_at?: string
+          id?: string
+          sender_profile_id?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_sender_profile_id_fkey"
+            columns: ["sender_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "message_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -278,6 +344,7 @@ export type Database = {
           learner_id: string
           marks_obtained: number | null
           status: Database["public"]["Enums"]["assessment_status"]
+          submission_path: string | null
           submitted_at: string | null
           updated_at: string
         }
@@ -290,6 +357,7 @@ export type Database = {
           learner_id: string
           marks_obtained?: number | null
           status?: Database["public"]["Enums"]["assessment_status"]
+          submission_path?: string | null
           submitted_at?: string | null
           updated_at?: string
         }
@@ -302,6 +370,7 @@ export type Database = {
           learner_id?: string
           marks_obtained?: number | null
           status?: Database["public"]["Enums"]["assessment_status"]
+          submission_path?: string | null
           submitted_at?: string | null
           updated_at?: string
         }
@@ -345,6 +414,42 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      thread_participants: {
+        Row: {
+          created_at: string
+          id: string
+          profile_id: string
+          thread_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          profile_id: string
+          thread_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          profile_id?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "thread_participants_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "thread_participants_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "message_threads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

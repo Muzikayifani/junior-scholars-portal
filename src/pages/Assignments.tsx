@@ -8,6 +8,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { ClipboardList, Calendar, Clock, CheckCircle, AlertCircle, BookOpen } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { format } from 'date-fns';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 
 interface Assignment {
   id: string;
@@ -26,8 +29,12 @@ interface Assignment {
 
 export default function Assignments() {
   const { profile, user, loading: authLoading } = useAuth();
+  const { toast } = useToast();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
+  const [file, setFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (profile && user) {
@@ -273,8 +280,8 @@ export default function Assignments() {
           <Button variant="outline" size="sm" className="flex-1">
             View Details
           </Button>
-          {profile?.role === 'learner' && assignment.status === 'pending' && (
-            <Button size="sm" className="flex-1 btn-gradient">
+          {profile?.role === 'learner' && (!assignment.status || assignment.status === 'pending') && (
+            <Button size="sm" className="flex-1 btn-gradient" onClick={() => { setSelectedAssignment(assignment); setUploadOpen(true); }}>
               Submit Work
             </Button>
           )}
@@ -287,6 +294,48 @@ export default function Assignments() {
       </CardContent>
     </Card>
   );
+
+  const handleUpload = async () => {
+    if (!user || !profile || !selectedAssignment || !file) return;
+    try {
+      // Get learner id for current user
+      const { data: learner, error: learnerErr } = await supabase
+        .from('learners')
+        .select('id')
+        .eq('profile_id', profile.id)
+        .maybeSingle();
+      if (learnerErr) throw learnerErr;
+      if (!learner) throw new Error('No learner record found for your profile');
+
+      const path = `${user.id}/${selectedAssignment.id}/${Date.now()}_${file.name}`;
+      const { error: uploadErr } = await supabase.storage.from('submissions').upload(path, file, {
+        upsert: false,
+        cacheControl: '3600',
+      });
+      if (uploadErr) throw uploadErr;
+
+      const payload = {
+        assessment_id: selectedAssignment.id,
+        learner_id: learner.id,
+        status: 'submitted' as any,
+        submitted_at: new Date().toISOString(),
+        submission_path: path,
+      };
+
+      const { error: upsertErr } = await supabase
+        .from('results')
+        .upsert(payload, { onConflict: 'assessment_id,learner_id' });
+      if (upsertErr) throw upsertErr;
+
+      toast({ title: 'Submitted successfully' });
+      setUploadOpen(false);
+      setFile(null);
+      setSelectedAssignment(null);
+      fetchAssignments();
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    }
+  };
 
   return (
     <div className="animate-fade-in p-6 space-y-6">
@@ -362,6 +411,21 @@ export default function Assignments() {
           {assignments.map(renderAssignmentCard)}
         </div>
       )}
+
+      <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Submit your work</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+            <div className="flex gap-2 justify-end pt-2">
+              <Button variant="outline" onClick={() => setUploadOpen(false)}>Cancel</Button>
+              <Button onClick={handleUpload} disabled={!file}>Upload</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

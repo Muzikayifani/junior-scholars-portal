@@ -16,6 +16,7 @@ import Schedule from "./pages/Schedule";
 import TeacherPortal from "./components/teacher/TeacherPortal";
 import Layout from "./components/Layout";
 import NotFound from "./pages/NotFound";
+import Communication from "./pages/Communication";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,7 +46,7 @@ const App = () => (
               <Route path="/schedule" element={<Layout><Schedule /></Layout>} />
               <Route path="/children" element={<Layout><div className="animate-fade-in">My Children - Coming Soon</div></Layout>} />
               <Route path="/reports" element={<Layout><div className="animate-fade-in">Reports - Coming Soon</div></Layout>} />
-              <Route path="/communication" element={<Layout><div className="animate-fade-in">Communication - Coming Soon</div></Layout>} />
+              <Route path="/communication" element={<Layout><Communication /></Layout>} />
               <Route path="/classes" element={<Layout><MyClasses /></Layout>} />
               <Route path="/settings" element={<Layout><Settings /></Layout>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -48,6 +48,7 @@ const getTeacherMenuItems = () => [
   { title: "Assessments", url: "/assessments", icon: ClipboardList },
   { title: "Results", url: "/results", icon: Award },
   { title: "Schedule", url: "/schedule", icon: Calendar },
+  { title: "Communication", url: "/communication", icon: FileText },
 ];
 
 export function AppSidebar() {
