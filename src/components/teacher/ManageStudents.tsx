@@ -72,7 +72,7 @@ const ManageStudents = () => {
       .from('learners')
       .select(`
         *,
-        profile:profiles(first_name, last_name, email),
+        profile:profiles!learners_user_id_fkey(full_name, email),
         class:classes(name, grade_level)
       `)
       .eq('class_id', selectedClassId);
@@ -198,13 +198,9 @@ const ManageStudents = () => {
       const { data: newLearner, error: learnerError } = await supabase
         .from('learners')
         .insert({
+          user_id: generatedUserId,
           student_number: addForm.student_number,
-          'Student FullName': displayName,
-          emergency_contact: addForm.emergency_contact,
-          address: addForm.address,
-          date_of_birth: addForm.date_of_birth || null,
-          class_id: addForm.class_id,
-          profile_id: newProfile!.id
+          class_id: addForm.class_id
         })
         .select('id')
         .single();
@@ -472,8 +468,7 @@ const ManageStudents = () => {
                     <TableRow key={learner.id}>
                       <TableCell className="font-medium">{learner.student_number}</TableCell>
                       <TableCell>
-                        {learner['Student FullName'] || 
-                         `${learner.profile?.first_name} ${learner.profile?.last_name}`}
+                        {learner.profile?.full_name || 'Name not set'}
                       </TableCell>
                       <TableCell>{learner.profile?.email}</TableCell>
                       <TableCell>{learner.emergency_contact}</TableCell>

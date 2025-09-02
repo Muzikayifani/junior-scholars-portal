@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       assessments: {
         Row: {
+          "Assessment type": string | null
           class_id: string
           created_at: string
           description: string | null
@@ -31,6 +32,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          "Assessment type"?: string | null
           class_id: string
           created_at?: string
           description?: string | null
@@ -46,6 +48,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          "Assessment type"?: string | null
           class_id?: string
           created_at?: string
           description?: string | null
@@ -129,6 +132,49 @@ export type Database = {
             referencedRelation: "subjects"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_class_schedule_teacher_id"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      class_subjects: {
+        Row: {
+          class_id: string
+          created_at: string
+          id: string
+          subject_id: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          id?: string
+          subject_id: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          id?: string
+          subject_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_subjects_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_subjects_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
         ]
       }
       classes: {
@@ -148,7 +194,7 @@ export type Database = {
           grade_level: number
           id?: string
           name: string
-          school_year: string
+          school_year?: string
           teacher_id?: string | null
           updated_at?: string
         }
@@ -162,7 +208,15 @@ export type Database = {
           teacher_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_classes_teacher_id"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       learners: {
         Row: {
@@ -171,6 +225,7 @@ export type Database = {
           enrollment_date: string
           id: string
           status: string | null
+          student_number: string | null
           user_id: string
         }
         Insert: {
@@ -179,6 +234,7 @@ export type Database = {
           enrollment_date?: string
           id?: string
           status?: string | null
+          student_number?: string | null
           user_id: string
         }
         Update: {
@@ -187,9 +243,17 @@ export type Database = {
           enrollment_date?: string
           id?: string
           status?: string | null
+          student_number?: string | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_learners_user_id"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "learners_class_id_fkey"
             columns: ["class_id"]

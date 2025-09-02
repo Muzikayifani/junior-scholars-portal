@@ -60,7 +60,7 @@ export default function Assignments() {
             subjects (name),
             classes (name)
           `)
-          .eq('teacher_id', profile.id)
+          .eq('teacher_id', profile.user_id)
           .order('due_date', { ascending: true });
 
         if (error) throw error;
@@ -82,7 +82,7 @@ export default function Assignments() {
         const { data: learnerData, error: learnerError } = await supabase
           .from('learners')
           .select('id, class_id')
-          .eq('profile_id', profile.id)
+          .eq('user_id', profile.user_id)
           .single();
 
         if (learnerError) throw learnerError;
@@ -119,7 +119,7 @@ export default function Assignments() {
             type: item.type,
             subject_name: item.subjects?.name,
             class_name: item.classes?.name,
-            status: item.results?.[0]?.status || 'pending',
+            status: (item.results?.[0]?.status as 'pending' | 'submitted' | 'graded') || 'pending',
             marks_obtained: item.results?.[0]?.marks_obtained,
             submitted_at: item.results?.[0]?.submitted_at
           })) || [];
@@ -134,9 +134,9 @@ export default function Assignments() {
             id,
             class_id,
             classes (name),
-            profiles (first_name, last_name)
+            profiles (full_name)
           `)
-          .eq('parent_id', profile.id);
+          .eq('parent_id', profile.user_id);
 
         if (childrenError) throw childrenError;
         
@@ -302,7 +302,7 @@ export default function Assignments() {
       const { data: learner, error: learnerErr } = await supabase
         .from('learners')
         .select('id')
-        .eq('profile_id', profile.id)
+        .eq('user_id', profile.user_id)
         .maybeSingle();
       if (learnerErr) throw learnerErr;
       if (!learner) throw new Error('No learner record found for your profile');

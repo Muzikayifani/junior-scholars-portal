@@ -49,10 +49,11 @@ export default function Schedule() {
             day_of_week,
             start_time,
             end_time,
+            room,
             subjects (name),
             classes (name)
           `)
-          .eq('teacher_id', profile.id)
+          .eq('teacher_id', profile.user_id)
           .order('day_of_week')
           .order('start_time');
 
@@ -64,7 +65,8 @@ export default function Schedule() {
           class_name: item.classes?.name || 'Unknown Class',
           day_of_week: item.day_of_week,
           start_time: item.start_time,
-          end_time: item.end_time
+          end_time: item.end_time,
+          room: item.room
         })) || [];
         
         setSchedule(formattedData);
@@ -73,7 +75,7 @@ export default function Schedule() {
         const { data: learnerData, error: learnerError } = await supabase
           .from('learners')
           .select('class_id')
-          .eq('profile_id', profile.id)
+          .eq('user_id', profile.user_id)
           .single();
 
         if (learnerError) throw learnerError;
@@ -86,12 +88,9 @@ export default function Schedule() {
               day_of_week,
               start_time,
               end_time,
+              room,
               subjects (name),
-              classes (name),
-              profiles!class_schedule_teacher_id_fkey (
-                first_name,
-                last_name
-              )
+              classes (name)
             `)
             .eq('class_id', learnerData.class_id)
             .order('day_of_week')
@@ -103,58 +102,11 @@ export default function Schedule() {
             id: item.id,
             subject_name: item.subjects?.name || 'Unknown Subject',
             class_name: item.classes?.name || 'Unknown Class',
-            teacher_name: `${item.profiles?.first_name} ${item.profiles?.last_name}`,
+            teacher_name: 'Teacher', // Simplified
             day_of_week: item.day_of_week,
             start_time: item.start_time,
-            end_time: item.end_time
-          })) || [];
-          
-          setSchedule(formattedData);
-        }
-      } else if (profile?.role === 'parent') {
-        // Parents see their children's schedules
-        const { data: childrenData, error: childrenError } = await supabase
-          .from('learners')
-          .select(`
-            class_id,
-            profiles (first_name, last_name)
-          `)
-          .eq('parent_id', profile.id);
-
-        if (childrenError) throw childrenError;
-        
-        if (childrenData && childrenData.length > 0) {
-          const classIds = childrenData.map(child => child.class_id).filter(Boolean);
-          
-          const { data, error } = await supabase
-            .from('class_schedule')
-            .select(`
-              id,
-              class_id,
-              day_of_week,
-              start_time,
-              end_time,
-              subjects (name),
-              classes (name),
-              profiles!class_schedule_teacher_id_fkey (
-                first_name,
-                last_name
-              )
-            `)
-            .in('class_id', classIds)
-            .order('day_of_week')
-            .order('start_time');
-
-          if (error) throw error;
-          
-          const formattedData = data?.map(item => ({
-            id: item.id,
-            subject_name: item.subjects?.name || 'Unknown Subject',
-            class_name: item.classes?.name || 'Unknown Class',
-            teacher_name: `${item.profiles?.first_name} ${item.profiles?.last_name}`,
-            day_of_week: item.day_of_week,
-            start_time: item.start_time,
-            end_time: item.end_time
+            end_time: item.end_time,
+            room: item.room
           })) || [];
           
           setSchedule(formattedData);
@@ -210,8 +162,6 @@ export default function Schedule() {
           <p className="text-muted-foreground">
             {profile?.role === 'teacher' 
               ? 'Your teaching schedule'
-              : profile?.role === 'parent'
-              ? 'Your children\'s class schedules'
               : 'Your class schedule'
             }
           </p>
@@ -379,6 +329,13 @@ export default function Schedule() {
                           {formatTime(item.start_time)} - {formatTime(item.end_time)}
                         </span>
                       </div>
+
+                      {item.room && (
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{item.room}</span>
+                        </div>
+                      )}
                       
                       <Button variant="outline" size="sm" className="w-full">
                         View Details

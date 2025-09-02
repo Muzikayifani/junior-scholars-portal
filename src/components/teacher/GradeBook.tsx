@@ -90,7 +90,7 @@ const GradeBook = () => {
           id, title, type, total_marks, class_id,
           class:classes(name)
         `)
-        .eq('teacher_id', profile.id);
+        .eq('teacher_id', profile.user_id);
 
       if (selectedClass !== 'all') {
         assessmentQuery = assessmentQuery.eq('class_id', selectedClass);
@@ -117,7 +117,7 @@ const GradeBook = () => {
         .select(`
           id,
           class_id,
-          profile_data:profiles!learners_profile_id_fkey(first_name, last_name),
+          profile_data:profiles!learners_user_id_fkey(full_name),
           class:classes(name)
         `)
         .in('class_id', classIds);
@@ -174,7 +174,7 @@ const GradeBook = () => {
 
         return {
           id: student.id,
-          student_name: `${student.profile_data?.first_name} ${student.profile_data?.last_name}`,
+          student_name: 'Unknown Student',
           student_id: student.id,
           class_name: student.class?.name || '',
           assessments: studentAssessments,
