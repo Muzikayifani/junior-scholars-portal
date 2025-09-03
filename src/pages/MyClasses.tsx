@@ -15,9 +15,9 @@ interface ClassData {
   id: string;
   name: string;
   grade_level: number;
+  school_year?: string;
   teacher?: {
-    first_name: string;
-    last_name: string;
+    full_name: string;
   };
   student_count?: number;
   subjects?: string[];
@@ -55,10 +55,9 @@ export default function MyClasses() {
             id,
             name,
             grade_level,
-            profiles!classes_teacher_id_fkey (
-              first_name,
-              last_name
-            )
+            school_year,
+            capacity,
+            created_at
           `)
           .eq('teacher_id', profile.user_id);
 
@@ -70,14 +69,12 @@ export default function MyClasses() {
           .from('learners')
           .select(`
             class_id,
-            classes!learners_class_id_fkey (
+            classes (
               id,
               name,
               grade_level,
-              profiles!classes_teacher_id_fkey (
-                first_name,
-                last_name
-              )
+              school_year,
+              teacher_id
             )
           `)
           .eq('user_id', profile.user_id)
@@ -86,21 +83,29 @@ export default function MyClasses() {
         if (learnerError) throw learnerError;
         
         if (learnerData?.classes) {
-          setClasses([learnerData.classes]);
+          // Get teacher info separately
+          const { data: teacherData } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('user_id', learnerData.classes.teacher_id)
+            .single();
+            
+          setClasses([{
+            ...learnerData.classes,
+            teacher: teacherData ? { full_name: teacherData.full_name } : undefined
+          }]);
         }
       } else if (profile?.role === 'parent') {
         // Parents see their children's classes
         const { data: childrenData, error: childrenError } = await supabase
           .from('learners')
           .select(`
-            classes!learners_class_id_fkey (
+            classes (
               id,
               name,
               grade_level,
-              profiles!classes_teacher_id_fkey (
-                first_name,
-                last_name
-              )
+              school_year,
+              teacher_id
             )
           `)
           .eq('user_id', profile.user_id);
@@ -236,7 +241,7 @@ export default function MyClasses() {
                   <div className="flex items-center gap-2">
                     <GraduationCap className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm">
-                      {classItem.teacher.first_name} {classItem.teacher.last_name}
+                      {classItem.teacher.full_name}
                     </span>
                   </div>
                 )}
