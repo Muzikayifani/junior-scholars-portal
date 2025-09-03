@@ -127,37 +127,20 @@ export default function Assignments() {
           setAssignments(formattedData);
         }
       } else if (profile?.role === 'parent') {
-        // Parents see their children's assignments
-        const { data: childrenData, error: childrenError } = await supabase
-          .from('learners')
+        // Parents see their children's assignments - simplified query
+        const { data, error } = await supabase
+          .from('assessments')
           .select(`
             id,
-            class_id,
-            classes (name),
-            profiles (full_name)
+            title,
+            description,
+            due_date,
+            total_marks,
+            type,
+            subjects (name),
+            classes (name)
           `)
-          .eq('parent_id', profile.user_id);
-
-        if (childrenError) throw childrenError;
-        
-        if (childrenData && childrenData.length > 0) {
-          const classIds = childrenData.map(child => child.class_id).filter(Boolean);
-          
-          const { data, error } = await supabase
-            .from('assessments')
-            .select(`
-              id,
-              title,
-              description,
-              due_date,
-              total_marks,
-              type,
-              class_id,
-              subjects (name),
-              classes (name)
-            `)
-            .in('class_id', classIds)
-            .order('due_date', { ascending: true });
+          .order('due_date', { ascending: true });
 
           if (error) throw error;
           
@@ -173,7 +156,6 @@ export default function Assignments() {
           })) || [];
           
           setAssignments(formattedData);
-        }
       }
     } catch (error: any) {
       console.error('Error fetching assignments:', error);

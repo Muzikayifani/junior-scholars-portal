@@ -44,7 +44,7 @@ const AssessmentManagement = () => {
         const { data: learnerData, error: learnerError } = await supabase
           .from('learners')
           .select('class_id')
-          .eq('profile_id', profile.id)
+          .eq('user_id', profile.user_id)
           .single();
 
         if (learnerError) throw learnerError;
@@ -71,7 +71,7 @@ const AssessmentManagement = () => {
         const { data: childrenData, error: childrenError } = await supabase
           .from('learners')
           .select('class_id')
-          .eq('parent_id', profile.id);
+          .eq('user_id', profile.user_id);
 
         if (childrenError) throw childrenError;
         

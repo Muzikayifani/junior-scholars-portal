@@ -18,7 +18,7 @@ interface ClassData {
   name: string;
   grade_level: number;
   school_year: string;
-  teacher?: { full_name: string; };
+  profiles?: { full_name: string; }[] | { full_name: string; };
   learners?: any[];
   class_subjects?: { subjects: { id: string; name: string; } }[];
 }
@@ -70,7 +70,7 @@ const ManageClasses = () => {
       .from('classes')
       .select(`
         *,
-        teacher:profiles!classes_teacher_id_fkey(full_name),
+        profiles!classes_teacher_id_fkey(full_name),
         learners(id),
         class_subjects(
           subjects(id, name)
