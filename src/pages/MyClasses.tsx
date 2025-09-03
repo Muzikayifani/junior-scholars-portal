@@ -3,8 +3,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
-import { BookOpen, Users, Calendar, Clock, GraduationCap } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { BookOpen, Users, Calendar, Clock, GraduationCap, Plus } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 interface ClassData {
@@ -22,8 +26,16 @@ interface ClassData {
 
 export default function MyClasses() {
   const { profile, user, loading: authLoading } = useAuth();
+  const { toast } = useToast();
   const [classes, setClasses] = useState<ClassData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    name: '',
+    grade_level: '',
+    school_year: '2024-2025'
+  });
 
   useEffect(() => {
     if (profile && user) {
@@ -48,7 +60,7 @@ export default function MyClasses() {
               last_name
             )
           `)
-          .eq('teacher_id', profile.id);
+          .eq('teacher_id', profile.user_id);
 
         if (error) throw error;
         setClasses(data || []);
@@ -68,7 +80,7 @@ export default function MyClasses() {
               )
             )
           `)
-          .eq('profile_id', profile.id)
+          .eq('user_id', profile.user_id)
           .single();
 
         if (learnerError) throw learnerError;
@@ -91,7 +103,7 @@ export default function MyClasses() {
               )
             )
           `)
-          .eq('parent_id', profile.id);
+          .eq('user_id', profile.user_id);
 
         if (childrenError) throw childrenError;
         
@@ -109,6 +121,41 @@ export default function MyClasses() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCreateClass = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profile) return;
+    
+    setCreateLoading(true);
+    
+    const classData = {
+      name: createForm.name,
+      grade_level: parseInt(createForm.grade_level),
+      teacher_id: profile.user_id,
+      school_year: createForm.school_year
+    };
+
+    const { error } = await supabase
+      .from('classes')
+      .insert(classData);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Class created successfully!",
+      });
+      setShowCreateForm(false);
+      setCreateForm({ name: '', grade_level: '', school_year: '2024-2025' });
+      fetchClasses(); // Refresh the classes list
+    }
+    setCreateLoading(false);
   };
 
   if (authLoading || loading) {
@@ -159,8 +206,12 @@ export default function MyClasses() {
               }
             </p>
             {profile?.role === 'teacher' && (
-              <Button className="btn-gradient">
-                Request Class Assignment
+              <Button 
+                className="btn-gradient"
+                onClick={() => setShowCreateForm(true)}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create New Class
               </Button>
             )}
           </CardContent>
@@ -232,6 +283,68 @@ export default function MyClasses() {
           ))}
         </div>
       )}
+
+      {/* Create Class Dialog */}
+      <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New Class</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreateClass} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Class Name</Label>
+              <Input
+                id="name"
+                value={createForm.name}
+                onChange={(e) => setCreateForm({...createForm, name: e.target.value})}
+                placeholder="e.g., Mathematics A"
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="grade_level">Grade Level</Label>
+              <Input
+                id="grade_level"
+                type="number"
+                min="1"
+                max="12"
+                value={createForm.grade_level}
+                onChange={(e) => setCreateForm({...createForm, grade_level: e.target.value})}
+                placeholder="e.g., 10"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="school_year">School Year</Label>
+              <Input
+                id="school_year"
+                value={createForm.school_year}
+                onChange={(e) => setCreateForm({...createForm, school_year: e.target.value})}
+                placeholder="e.g., 2024-2025"
+                required
+              />
+            </div>
+            
+            <div className="flex gap-2">
+              <Button type="submit" disabled={createLoading}>
+                {createLoading ? "Creating..." : "Create Class"}
+              </Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setShowCreateForm(false);
+                  setCreateForm({ name: '', grade_level: '', school_year: '2024-2025' });
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
