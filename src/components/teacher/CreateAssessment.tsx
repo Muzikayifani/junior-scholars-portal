@@ -24,8 +24,10 @@ const CreateAssessment = ({ onAssessmentCreated }: CreateAssessmentProps) => {
   // Load classes and subjects on component mount
   React.useEffect(() => {
     const loadData = async () => {
+      if (!profile?.user_id) return;
+      
       const [classesResult, subjectsResult] = await Promise.all([
-        supabase.from('classes').select('*'),
+        supabase.from('classes').select('*').eq('teacher_id', profile.user_id),
         supabase.from('subjects').select('*')
       ]);
       
@@ -34,7 +36,7 @@ const CreateAssessment = ({ onAssessmentCreated }: CreateAssessmentProps) => {
     };
     
     loadData();
-  }, []);
+  }, [profile]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
