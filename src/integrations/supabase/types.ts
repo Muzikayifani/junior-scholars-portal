@@ -385,7 +385,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_basic_profile_info: {
+        Args: { profile_user_id: string }
+        Returns: {
+          email: string
+          full_name: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }[]
+      }
     }
     Enums: {
       app_role: "teacher" | "learner" | "parent" | "admin"
