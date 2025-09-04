@@ -53,7 +53,7 @@ const CreateAssessment = ({ onAssessmentCreated }: CreateAssessmentProps) => {
       subject_id: formData.get('subject_id') as string,
       total_marks: parseInt(formData.get('total_marks') as string) || 100,
       due_date: formData.get('due_date') as string,
-      teacher_id: profile.id,
+      teacher_id: profile.user_id,
     };
 
     const { error } = await supabase

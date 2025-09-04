@@ -218,6 +218,30 @@ export type Database = {
           },
         ]
       }
+      grades: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          level: number
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          level: number
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          level?: number
+          name?: string
+        }
+        Relationships: []
+      }
       learners: {
         Row: {
           class_id: string

@@ -44,6 +44,7 @@ const ManageClasses = () => {
   const [selectedClass, setSelectedClass] = useState<ClassData | null>(null);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<string>('');
+  const [grades, setGrades] = useState<any[]>([]);
   const [editForm, setEditForm] = useState({
     name: '',
     grade_level: '',
@@ -60,7 +61,8 @@ const ManageClasses = () => {
     await Promise.all([
       loadClasses(),
       loadSubjects(),
-      loadAvailableStudents()
+      loadAvailableStudents(),
+      loadGrades()
     ]);
   };
 
@@ -116,6 +118,17 @@ const ManageClasses = () => {
       const enrolledUserIds = enrolledStudents?.map(s => s.user_id) || [];
       const available = data.filter(student => !enrolledUserIds.includes(student.user_id));
       setAvailableStudents(available);
+    }
+  };
+
+  const loadGrades = async () => {
+    const { data, error } = await supabase
+      .from('grades')
+      .select('*')
+      .order('level');
+
+    if (!error && data) {
+      setGrades(data);
     }
   };
 
@@ -484,16 +497,22 @@ const ManageClasses = () => {
             
             <div className="space-y-2">
               <Label htmlFor="grade_level">Grade Level</Label>
-              <Input
-                id="grade_level"
-                type="number"
-                min="1"
-                max="12"
-                value={editForm.grade_level}
-                onChange={(e) => setEditForm({...editForm, grade_level: e.target.value})}
-                placeholder="e.g., 10"
+              <Select 
+                value={editForm.grade_level} 
+                onValueChange={(value) => setEditForm({...editForm, grade_level: value})}
                 required
-              />
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select grade level" />
+                </SelectTrigger>
+                <SelectContent className="bg-white z-50">
+                  {grades.map((grade) => (
+                    <SelectItem key={grade.id} value={grade.level.toString()}>
+                      {grade.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
