@@ -418,6 +418,18 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      user_is_taught_by: {
+        Args: { teacher_user_id: string }
+        Returns: boolean
+      }
+      user_teaches_student: {
+        Args: { student_user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "teacher" | "learner" | "parent" | "admin"
