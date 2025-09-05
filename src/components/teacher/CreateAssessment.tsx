@@ -18,25 +18,84 @@ const CreateAssessment = ({ onAssessmentCreated }: CreateAssessmentProps) => {
   const { profile } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(false);
   const [classes, setClasses] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Load classes and subjects on component mount
   React.useEffect(() => {
     const loadData = async () => {
-      if (!profile?.user_id) return;
+      if (!profile?.user_id) {
+        console.log('CreateAssessment: No profile user_id available', { profile });
+        return;
+      }
       
-      const [classesResult, subjectsResult] = await Promise.all([
-        supabase.from('classes').select('*').eq('teacher_id', profile.user_id),
-        supabase.from('subjects').select('*')
-      ]);
+      console.log('CreateAssessment: Starting to load data for user:', profile.user_id);
+      setDataLoading(true);
+      setLoadError(null);
       
-      if (classesResult.data) setClasses(classesResult.data);
-      if (subjectsResult.data) setSubjects(subjectsResult.data);
+      try {
+        const [classesResult, subjectsResult] = await Promise.all([
+          supabase.from('classes').select('*').eq('teacher_id', profile.user_id),
+          supabase.from('subjects').select('*')
+        ]);
+        
+        console.log('CreateAssessment: Classes result:', classesResult);
+        console.log('CreateAssessment: Subjects result:', subjectsResult);
+        
+        if (classesResult.error) {
+          console.error('CreateAssessment: Classes fetch error:', classesResult.error);
+          throw new Error(`Failed to load classes: ${classesResult.error.message}`);
+        }
+        
+        if (subjectsResult.error) {
+          console.error('CreateAssessment: Subjects fetch error:', subjectsResult.error);
+          throw new Error(`Failed to load subjects: ${subjectsResult.error.message}`);
+        }
+        
+        setClasses(classesResult.data || []);
+        setSubjects(subjectsResult.data || []);
+        
+        console.log('CreateAssessment: Data loaded successfully', {
+          classesCount: classesResult.data?.length || 0,
+          subjectsCount: subjectsResult.data?.length || 0
+        });
+        
+        if (!classesResult.data?.length) {
+          console.warn('CreateAssessment: No classes found for teacher');
+        }
+        
+      } catch (error) {
+        console.error('CreateAssessment: Load data error:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to load data';
+        setLoadError(errorMessage);
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive"
+        });
+      } finally {
+        setDataLoading(false);
+      }
     };
     
     loadData();
-  }, [profile]);
+  }, [profile?.user_id, toast]);
+
+  const retryLoadData = () => {
+    console.log('CreateAssessment: Retrying data load');
+    // Trigger useEffect by updating a dependency
+    if (profile?.user_id) {
+      setDataLoading(true);
+      setLoadError(null);
+      // Re-run the effect by changing the dependency array trigger
+      React.startTransition(() => {
+        setClasses([]);
+        setSubjects([]);
+      });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,9 +179,15 @@ const CreateAssessment = ({ onAssessmentCreated }: CreateAssessmentProps) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="class_id">Class</Label>
-              <Select name="class_id" required>
+              <Select name="class_id" required disabled={dataLoading}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select class" />
+                  <SelectValue placeholder={
+                    dataLoading 
+                      ? "Loading classes..." 
+                      : classes.length === 0 
+                        ? "No classes found" 
+                        : "Select class"
+                  } />
                 </SelectTrigger>
                 <SelectContent>
                   {classes.map((cls) => (
@@ -132,13 +197,24 @@ const CreateAssessment = ({ onAssessmentCreated }: CreateAssessmentProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              {classes.length === 0 && !dataLoading && (
+                <p className="text-sm text-muted-foreground">
+                  No classes found. Create a class first to add assessments.
+                </p>
+              )}
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="subject_id">Subject</Label>
-              <Select name="subject_id" required>
+              <Select name="subject_id" required disabled={dataLoading}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select subject" />
+                  <SelectValue placeholder={
+                    dataLoading 
+                      ? "Loading subjects..." 
+                      : subjects.length === 0 
+                        ? "No subjects found" 
+                        : "Select subject"
+                  } />
                 </SelectTrigger>
                 <SelectContent>
                   {subjects.map((subject) => (
@@ -148,8 +224,30 @@ const CreateAssessment = ({ onAssessmentCreated }: CreateAssessmentProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              {subjects.length === 0 && !dataLoading && (
+                <p className="text-sm text-muted-foreground">
+                  No subjects available.
+                </p>
+              )}
             </div>
           </div>
+
+          {loadError && (
+            <div className="rounded-md bg-destructive/15 p-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-destructive">{loadError}</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={retryLoadData}
+                  disabled={dataLoading}
+                >
+                  {dataLoading ? "Loading..." : "Retry"}
+                </Button>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -184,8 +282,12 @@ const CreateAssessment = ({ onAssessmentCreated }: CreateAssessmentProps) => {
             />
           </div>
 
-          <Button type="submit" disabled={loading} className="w-full md:w-auto">
-            {loading ? "Creating..." : "Create Assessment"}
+          <Button 
+            type="submit" 
+            disabled={loading || dataLoading || classes.length === 0} 
+            className="w-full md:w-auto"
+          >
+            {loading ? "Creating..." : dataLoading ? "Loading data..." : "Create Assessment"}
           </Button>
         </form>
       </CardContent>
