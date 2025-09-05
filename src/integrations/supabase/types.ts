@@ -409,6 +409,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      class_belongs_to_teacher: {
+        Args: { target_learner_id: string }
+        Returns: boolean
+      }
       get_basic_profile_info: {
         Args: { profile_user_id: string }
         Returns: {
@@ -422,8 +426,16 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      user_is_enrolled_in_class: {
+        Args: { target_class_id: string }
+        Returns: boolean
+      }
       user_is_taught_by: {
         Args: { teacher_user_id: string }
+        Returns: boolean
+      }
+      user_owns_class: {
+        Args: { target_class_id: string }
         Returns: boolean
       }
       user_teaches_student: {
