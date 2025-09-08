@@ -117,7 +117,7 @@ const GradeBook = () => {
         .select(`
           id,
           class_id,
-          profile_data:profiles!learners_user_id_fkey(full_name),
+          profile_data:profiles!fk_learners_user_id(full_name),
           class:classes(name)
         `)
         .in('class_id', classIds);

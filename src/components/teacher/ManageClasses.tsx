@@ -72,7 +72,7 @@ const ManageClasses = () => {
       .from('classes')
       .select(`
         *,
-        profiles!classes_teacher_id_fkey(full_name),
+        profiles!fk_classes_teacher_id(full_name),
         learners(id),
         class_subjects(
           subjects(id, name)

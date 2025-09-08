@@ -72,7 +72,7 @@ const ManageStudents = () => {
       .from('learners')
       .select(`
         *,
-        profile:profiles!learners_user_id_fkey(full_name, email),
+        profile:profiles!fk_learners_user_id(full_name, email, first_name, last_name),
         class:classes(name, grade_level)
       `)
       .eq('class_id', selectedClassId);
