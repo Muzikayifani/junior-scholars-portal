@@ -432,6 +432,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      is_teacher: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       user_is_enrolled_in_class: {
         Args: { target_class_id: string }
         Returns: boolean
