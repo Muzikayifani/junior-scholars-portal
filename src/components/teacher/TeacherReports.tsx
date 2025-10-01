@@ -67,7 +67,7 @@ const TeacherReports = () => {
         .from('assessments')
         .select('*')
         .eq('class_id', selectedClassId)
-        .eq('teacher_id', profile?.id);
+        .eq('teacher_id', profile?.user_id);
 
       if (assessmentsError) throw assessmentsError;
 

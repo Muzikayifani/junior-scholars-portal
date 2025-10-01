@@ -170,6 +170,16 @@ const ManageStudents = () => {
       });
       return;
     }
+
+    // Verify teacher is authenticated
+    if (!profile?.user_id) {
+      toast({
+        title: "Error",
+        description: "You must be logged in as a teacher to add students",
+        variant: "destructive"
+      });
+      return;
+    }
     
     setLoading(true);
     
@@ -178,7 +188,7 @@ const ManageStudents = () => {
       const generatedUserId = crypto.randomUUID();
       const firstName = addForm.first_name.trim();
       const lastName = addForm.last_name.trim();
-      const displayName = addForm.full_name?.trim() || `${firstName} ${lastName}`;
+      const fullName = addForm.full_name?.trim() || `${firstName} ${lastName}`;
 
       const { data: newProfile, error: profileInsertError } = await supabase
         .from('profiles')
@@ -186,13 +196,17 @@ const ManageStudents = () => {
           user_id: generatedUserId,
           first_name: firstName,
           last_name: lastName,
+          full_name: fullName,
           email: addForm.email,
           role: 'learner'
         })
-        .select('id')
+        .select('user_id')
         .single();
 
-      if (profileInsertError) throw profileInsertError;
+      if (profileInsertError) {
+        console.error('Profile insert error:', profileInsertError);
+        throw new Error(`Failed to create student profile: ${profileInsertError.message}`);
+      }
 
       // Create the learner record
       const { data: newLearner, error: learnerError } = await supabase

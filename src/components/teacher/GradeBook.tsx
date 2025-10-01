@@ -116,13 +116,25 @@ const GradeBook = () => {
         .from('learners')
         .select(`
           id,
+          user_id,
           class_id,
-          profile_data:profiles!fk_learners_user_id(full_name),
           class:classes(name)
         `)
         .in('class_id', classIds);
 
       if (studentError) throw studentError;
+
+      // Fetch profiles for all students
+      const userIds = studentData?.map(s => s.user_id) || [];
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, first_name, last_name')
+        .in('user_id', userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Create a map of user_id to profile for quick lookup
+      const profileMap = new Map(profilesData?.map(p => [p.user_id, p]) || []);
 
       // Get all results for these assessments
       const assessmentIds = assessmentData.map(a => a.id);
@@ -172,9 +184,16 @@ const GradeBook = () => {
 
         const average = gradedAssessments > 0 ? Math.round((totalPoints / possiblePoints) * 100) : 0;
 
+        // Get student name from profile map
+        const profile = profileMap.get(student.user_id);
+        const studentName = profile?.full_name || 
+                           (profile?.first_name && profile?.last_name 
+                            ? `${profile.first_name} ${profile.last_name}` 
+                            : 'Unknown Student');
+
         return {
           id: student.id,
-          student_name: 'Unknown Student',
+          student_name: studentName,
           student_id: student.id,
           class_name: student.class?.name || '',
           assessments: studentAssessments,
