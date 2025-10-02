@@ -184,66 +184,45 @@ const ManageStudents = () => {
     setLoading(true);
     
     try {
-      // Create learner profile directly (no auth signup). Teachers are allowed by RLS.
-      const generatedUserId = crypto.randomUUID();
       const firstName = addForm.first_name.trim();
       const lastName = addForm.last_name.trim();
-      const fullName = addForm.full_name?.trim() || `${firstName} ${lastName}`;
 
-      const { data: newProfile, error: profileInsertError } = await supabase
-        .from('profiles')
-        .insert({
-          user_id: generatedUserId,
-          first_name: firstName,
-          last_name: lastName,
-          full_name: fullName,
-          email: addForm.email,
-          role: 'learner'
-        })
-        .select('user_id')
-        .single();
-
-      if (profileInsertError) {
-        console.error('Profile insert error:', profileInsertError);
-        throw new Error(`Failed to create student profile: ${profileInsertError.message}`);
+      // Get the current session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('No active session. Please log in again.');
       }
 
-      // Create the learner record
-      const { data: newLearner, error: learnerError } = await supabase
-        .from('learners')
-        .insert({
-          user_id: generatedUserId,
-          student_number: addForm.student_number,
-          class_id: addForm.class_id
-        })
-        .select('id')
-        .single();
+      // Call the edge function to create the student with proper auth
+      const response = await fetch(
+        `https://zhduiylpsfdswfsoqdba.supabase.co/functions/v1/create-student`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            firstName,
+            lastName,
+            email: addForm.email,
+            classId: addForm.class_id,
+            studentNumber: addForm.student_number || null
+          })
+        }
+      );
 
-      if (learnerError) throw learnerError;
+      const result = await response.json();
 
-      // Link the new learner to all existing assessments in this class by creating pending results
-      const { data: classAssessments, error: assessmentsError } = await supabase
-        .from('assessments')
-        .select('id')
-        .eq('class_id', addForm.class_id);
-
-      if (assessmentsError) throw assessmentsError;
-
-      if (classAssessments && classAssessments.length > 0) {
-        const resultsToInsert = classAssessments.map(a => ({
-          assessment_id: a.id,
-          learner_id: newLearner!.id,
-          status: 'pending' as any
-        }));
-        const { error: resultsError } = await supabase
-          .from('results')
-          .insert(resultsToInsert);
-        if (resultsError) throw resultsError;
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create student');
       }
 
       toast({
         title: "Success",
-        description: "Student added and linked to existing class assessments.",
+        description: `Student added successfully! Temporary password: ${result.data.tempPassword} (Please save this and share with the student)`,
+        duration: 15000, // Show for 15 seconds so teacher can copy it
       });
       
       setShowAddStudent(false);
@@ -260,9 +239,10 @@ const ManageStudents = () => {
       });
       loadLearners();
     } catch (error: any) {
+      console.error('Error adding student:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to add student. Please try again.",
         variant: "destructive"
       });
     }
