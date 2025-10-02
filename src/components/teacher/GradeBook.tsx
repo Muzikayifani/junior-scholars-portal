@@ -11,7 +11,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpen, Users, TrendingUp, Edit, Save, X, Plus, BarChart3 } from 'lucide-react';
+import { BookOpen, Users, TrendingUp, Edit, Save, X, Plus, BarChart3, ClipboardList } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface GradeBookEntry {
   id: string;
@@ -59,6 +60,8 @@ const GradeBook = () => {
   } | null>(null);
   const [editMarks, setEditMarks] = useState<string>('');
   const [editFeedback, setEditFeedback] = useState<string>('');
+  const [bulkGradingAssessment, setBulkGradingAssessment] = useState<string | null>(null);
+  const [bulkMarks, setBulkMarks] = useState<{[studentId: string]: {marks: string, feedback: string}}>({});
 
   useEffect(() => {
     loadClasses();
@@ -286,6 +289,104 @@ const GradeBook = () => {
     }
   };
 
+  const handleBulkGrading = (assessmentId: string) => {
+    setBulkGradingAssessment(assessmentId);
+    const initialMarks: {[key: string]: {marks: string, feedback: string}} = {};
+    gradeData.forEach(student => {
+      const grade = student.assessments[assessmentId];
+      if (grade) {
+        initialMarks[student.student_id] = {
+          marks: grade.marks_obtained?.toString() || '',
+          feedback: grade.feedback || ''
+        };
+      }
+    });
+    setBulkMarks(initialMarks);
+  };
+
+  const saveBulkGrades = async () => {
+    if (!bulkGradingAssessment) return;
+
+    try {
+      const assessment = assessments.find(a => a.id === bulkGradingAssessment);
+      if (!assessment) return;
+
+      const updates = [];
+      const inserts = [];
+
+      for (const [studentId, data] of Object.entries(bulkMarks)) {
+        const marks = data.marks ? parseInt(data.marks) : null;
+        
+        if (marks !== null && marks > assessment.total_marks) {
+          toast({
+            title: "Error",
+            description: `Marks for a student exceed ${assessment.total_marks}. Please check and try again.`,
+            variant: "destructive"
+          });
+          return;
+        }
+
+        const student = gradeData.find(s => s.student_id === studentId);
+        const existingResult = student?.assessments[bulkGradingAssessment];
+
+        const resultData = {
+          marks_obtained: marks,
+          feedback: data.feedback,
+          status: marks !== null ? 'graded' : 'pending',
+          graded_at: marks !== null ? new Date().toISOString() : null
+        };
+
+        if (existingResult?.resultId) {
+          updates.push({
+            id: existingResult.resultId,
+            ...resultData
+          });
+        } else {
+          inserts.push({
+            learner_id: studentId,
+            assessment_id: bulkGradingAssessment,
+            ...resultData
+          });
+        }
+      }
+
+      // Perform updates
+      for (const update of updates) {
+        const { id, ...data } = update;
+        const { error } = await supabase
+          .from('results')
+          .update(data)
+          .eq('id', id);
+        
+        if (error) throw error;
+      }
+
+      // Perform inserts
+      if (inserts.length > 0) {
+        const { error } = await supabase
+          .from('results')
+          .insert(inserts);
+        
+        if (error) throw error;
+      }
+
+      toast({
+        title: "Success",
+        description: `Graded ${updates.length + inserts.length} students successfully!`
+      });
+
+      setBulkGradingAssessment(null);
+      setBulkMarks({});
+      loadGradeBookData();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
   const getGradeColor = (percentage: number | null) => {
     if (percentage === null) return "text-muted-foreground";
     if (percentage >= 90) return "text-green-600";
@@ -367,9 +468,118 @@ const GradeBook = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Student Grades</CardTitle>
+          <CardTitle className="flex items-center justify-between">
+            <span>Student Grades</span>
+            {assessments.length > 0 && (
+              <div className="text-sm font-normal text-muted-foreground">
+                💡 Tip: Click on any grade cell to edit, or use bulk grading for faster entry
+              </div>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent>
+          {/* Bulk Grading Options */}
+          {assessments.length > 0 && gradeData.length > 0 && (
+            <div className="mb-6 p-4 bg-muted/50 rounded-lg">
+              <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                <ClipboardList className="h-4 w-4" />
+                Quick Bulk Grading
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {assessments.map(assessment => (
+                  <Dialog key={assessment.id} open={bulkGradingAssessment === assessment.id} onOpenChange={(open) => !open && setBulkGradingAssessment(null)}>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleBulkGrading(assessment.id)}
+                      >
+                        <Edit className="h-3 w-3 mr-2" />
+                        {assessment.title}
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl max-h-[80vh]">
+                      <DialogHeader>
+                        <DialogTitle>
+                          Bulk Grade: {assessment.title} ({assessment.total_marks} pts)
+                        </DialogTitle>
+                      </DialogHeader>
+                      <ScrollArea className="h-[500px] pr-4">
+                        <div className="space-y-4">
+                          {gradeData.map(student => {
+                            const grade = student.assessments[assessment.id];
+                            if (!grade) return null;
+                            
+                            return (
+                              <Card key={student.student_id} className="p-4">
+                                <div className="space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <h4 className="font-medium">{student.student_name}</h4>
+                                    <Badge variant={grade.status === 'graded' ? 'default' : 'outline'}>
+                                      {grade.status}
+                                    </Badge>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                      <label className="text-xs font-medium">Marks</label>
+                                      <Input
+                                        type="number"
+                                        max={assessment.total_marks}
+                                        min="0"
+                                        value={bulkMarks[student.student_id]?.marks || ''}
+                                        onChange={(e) => setBulkMarks({
+                                          ...bulkMarks,
+                                          [student.student_id]: {
+                                            ...bulkMarks[student.student_id],
+                                            marks: e.target.value
+                                          }
+                                        })}
+                                        placeholder="0"
+                                        className="h-8"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="text-xs font-medium">Feedback</label>
+                                      <Input
+                                        value={bulkMarks[student.student_id]?.feedback || ''}
+                                        onChange={(e) => setBulkMarks({
+                                          ...bulkMarks,
+                                          [student.student_id]: {
+                                            ...bulkMarks[student.student_id],
+                                            feedback: e.target.value
+                                          }
+                                        })}
+                                        placeholder="Optional"
+                                        className="h-8"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              </Card>
+                            );
+                          })}
+                        </div>
+                      </ScrollArea>
+                      <div className="flex gap-2 mt-4">
+                        <Button onClick={saveBulkGrades} className="flex-1">
+                          <Save className="h-4 w-4 mr-2" />
+                          Save All Grades
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => setBulkGradingAssessment(null)}
+                        >
+                          <X className="h-4 w-4 mr-2" />
+                          Cancel
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                ))}
+              </div>
+            </div>
+          )}
+          
           {loading ? (
             <div className="text-center py-8">
               <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
