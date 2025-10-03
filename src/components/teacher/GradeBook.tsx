@@ -86,14 +86,31 @@ const GradeBook = () => {
     
     setLoading(true);
     try {
-      // Get assessments created by teacher
+      // First, get all classes where teacher is assigned
+      const { data: teacherClasses, error: classError } = await supabase
+        .from('classes')
+        .select('id')
+        .eq('teacher_id', profile.user_id);
+
+      if (classError) throw classError;
+
+      const teacherClassIds = teacherClasses?.map(c => c.id) || [];
+
+      if (teacherClassIds.length === 0) {
+        setAssessments([]);
+        setGradeData([]);
+        setLoading(false);
+        return;
+      }
+
+      // Get assessments: created by teacher OR for classes teacher is assigned to
       let assessmentQuery = supabase
         .from('assessments')
         .select(`
           id, title, type, total_marks, class_id,
           class:classes(name)
         `)
-        .eq('teacher_id', profile.user_id);
+        .or(`teacher_id.eq.${profile.user_id},class_id.in.(${teacherClassIds.join(',')})`);
 
       if (selectedClass !== 'all') {
         assessmentQuery = assessmentQuery.eq('class_id', selectedClass);
@@ -588,8 +605,17 @@ const GradeBook = () => {
           ) : gradeData.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No students or assessments found.</p>
-              <p className="text-sm">Create assessments and enroll students to start grading.</p>
+              {assessments.length === 0 ? (
+                <>
+                  <p className="font-medium">No assessments found for your classes.</p>
+                  <p className="text-sm mt-2">Go to the "Create Assessment" tab to add your first assessment.</p>
+                </>
+              ) : (
+                <>
+                  <p className="font-medium">No students found in these classes.</p>
+                  <p className="text-sm mt-2">Enroll students in your classes to start grading.</p>
+                </>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">
