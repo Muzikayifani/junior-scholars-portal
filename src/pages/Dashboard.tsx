@@ -12,8 +12,166 @@ import {
   Clock,
   CheckCircle
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
 
 const LearnerDashboard = () => {
+  const { profile } = useAuth();
+  const [stats, setStats] = useState({
+    activeClasses: 0,
+    pendingAssignments: 0,
+    averageGrade: 0,
+    nextClass: null as { time: string; subject: string } | null
+  });
+  const [recentAssignments, setRecentAssignments] = useState<any[]>([]);
+  const [recentGrades, setRecentGrades] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!profile?.user_id) return;
+
+    const fetchLearnerData = async () => {
+      setLoading(true);
+      try {
+        // Fetch enrolled classes
+        const { data: enrolledClasses, error: classesError } = await supabase
+          .from('learners')
+          .select('class_id, class:classes(name)')
+          .eq('user_id', profile.user_id)
+          .eq('status', 'active');
+
+        if (classesError) throw classesError;
+
+        const classIds = enrolledClasses?.map(e => e.class_id) || [];
+        const activeClasses = classIds.length;
+
+        // Fetch pending assignments (assessments not yet submitted)
+        const { data: pendingAssessments, error: assessmentsError } = await supabase
+          .from('assessments')
+          .select(`
+            id, title, due_date, type, 
+            results!left(id, status, learner_id)
+          `)
+          .in('class_id', classIds)
+          .eq('is_published', true);
+
+        if (assessmentsError) throw assessmentsError;
+
+        // Get learner record IDs
+        const learnerRecords = enrolledClasses?.map(e => e.class_id) || [];
+        const { data: learnerIds, error: learnerError } = await supabase
+          .from('learners')
+          .select('id')
+          .eq('user_id', profile.user_id);
+
+        if (learnerError) throw learnerError;
+        const learnerIdsList = learnerIds?.map(l => l.id) || [];
+
+        // Filter pending (no result or status is pending)
+        const pending = pendingAssessments?.filter(a => {
+          const results = a.results as any[];
+          return !results || results.length === 0 || results.every(r => r.status === 'pending');
+        }) || [];
+
+        // Fetch recent results for average and display
+        const { data: resultsData, error: resultsError } = await supabase
+          .from('results')
+          .select(`
+            id, marks_obtained, status, graded_at, feedback,
+            assessment:assessments(id, title, total_marks, type),
+            learner:learners!inner(user_id)
+          `)
+          .in('learner_id', learnerIdsList)
+          .eq('status', 'graded')
+          .order('graded_at', { ascending: false })
+          .limit(5);
+
+        if (resultsError) throw resultsError;
+
+        let averageGrade = 0;
+        if (resultsData && resultsData.length > 0) {
+          const totalPercentage = resultsData.reduce((sum, result) => {
+            const assessment = result.assessment as any;
+            const percentage = (result.marks_obtained / assessment.total_marks) * 100;
+            return sum + percentage;
+          }, 0);
+          averageGrade = Math.round(totalPercentage / resultsData.length);
+        }
+
+        // Get next class from schedule
+        const today = new Date().getDay();
+        const currentTime = format(new Date(), 'HH:mm:ss');
+        
+        const { data: scheduleData, error: scheduleError } = await supabase
+          .from('class_schedule')
+          .select(`
+            day_of_week, start_time, end_time,
+            subject:subjects(name)
+          `)
+          .in('class_id', classIds)
+          .gte('day_of_week', today)
+          .order('day_of_week')
+          .order('start_time')
+          .limit(1);
+
+        if (scheduleError) throw scheduleError;
+
+        let nextClass = null;
+        if (scheduleData && scheduleData.length > 0) {
+          const schedule = scheduleData[0];
+          const subject = schedule.subject as any;
+          nextClass = {
+            time: format(new Date(`2000-01-01T${schedule.start_time}`), 'h:mm a'),
+            subject: subject.name
+          };
+        }
+
+        setStats({
+          activeClasses,
+          pendingAssignments: pending.length,
+          averageGrade,
+          nextClass
+        });
+
+        // Set recent assignments
+        setRecentAssignments(pending.slice(0, 3).map((a: any) => ({
+          id: a.id,
+          title: a.title,
+          dueDate: a.due_date,
+          type: a.type,
+          status: 'pending'
+        })));
+
+        // Set recent grades
+        setRecentGrades(resultsData?.slice(0, 3).map((r: any) => ({
+          id: r.id,
+          title: r.assessment.title,
+          percentage: Math.round((r.marks_obtained / r.assessment.total_marks) * 100),
+          gradedAt: r.graded_at
+        })) || []);
+
+      } catch (error) {
+        console.error('Error fetching learner data:', error);
+        toast.error('Failed to load dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLearnerData();
+  }, [profile]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <LoadingSpinner text="Loading your dashboard..." />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="animate-slide-up">
@@ -28,8 +186,8 @@ const LearnerDashboard = () => {
             <BookOpen className="h-4 w-4 text-muted-foreground transition-all duration-300 hover:scale-110 hover:text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">6</div>
-            <p className="text-xs text-muted-foreground">Subjects this term</p>
+            <div className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">{stats.activeClasses}</div>
+            <p className="text-xs text-muted-foreground">Enrolled classes</p>
           </CardContent>
         </Card>
         
@@ -39,8 +197,8 @@ const LearnerDashboard = () => {
             <ClipboardList className="h-4 w-4 text-muted-foreground transition-all duration-300 hover:scale-110 hover:text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">4</div>
-            <p className="text-xs text-muted-foreground">Due this week</p>
+            <div className="text-2xl font-bold text-destructive">{stats.pendingAssignments}</div>
+            <p className="text-xs text-muted-foreground">To be completed</p>
           </CardContent>
         </Card>
         
@@ -50,8 +208,8 @@ const LearnerDashboard = () => {
             <Award className="h-4 w-4 text-muted-foreground transition-all duration-300 hover:scale-110 hover:text-success" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-success">85%</div>
-            <p className="text-xs text-muted-foreground">+2% from last month</p>
+            <div className="text-2xl font-bold text-success">{stats.averageGrade}%</div>
+            <p className="text-xs text-muted-foreground">Overall performance</p>
           </CardContent>
         </Card>
         
@@ -61,8 +219,17 @@ const LearnerDashboard = () => {
             <Clock className="h-4 w-4 text-muted-foreground transition-all duration-300 hover:scale-110 hover:text-info" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-info">2:30 PM</div>
-            <p className="text-xs text-muted-foreground">Mathematics</p>
+            {stats.nextClass ? (
+              <>
+                <div className="text-2xl font-bold text-info">{stats.nextClass.time}</div>
+                <p className="text-xs text-muted-foreground">{stats.nextClass.subject}</p>
+              </>
+            ) : (
+              <>
+                <div className="text-2xl font-bold text-muted-foreground">N/A</div>
+                <p className="text-xs text-muted-foreground">No upcoming classes</p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -76,27 +243,23 @@ const LearnerDashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-200">
-              <div>
-                <p className="font-medium">Math Homework - Chapter 5</p>
-                <p className="text-sm text-muted-foreground">Due tomorrow</p>
+            {recentAssignments.length > 0 ? (
+              recentAssignments.map((assignment) => (
+                <div key={assignment.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-200">
+                  <div>
+                    <p className="font-medium">{assignment.title}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {assignment.dueDate ? `Due ${format(new Date(assignment.dueDate), 'MMM d')}` : 'No due date'}
+                    </p>
+                  </div>
+                  <Badge variant="destructive">Pending</Badge>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-4 text-muted-foreground">
+                <p>No pending assignments</p>
               </div>
-              <Badge variant="destructive">Pending</Badge>
-            </div>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-200">
-              <div>
-                <p className="font-medium">Science Project</p>
-                <p className="text-sm text-muted-foreground">Due Friday</p>
-              </div>
-              <Badge variant="secondary">In Progress</Badge>
-            </div>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-200">
-              <div>
-                <p className="font-medium">English Essay</p>
-                <p className="text-sm text-muted-foreground">Submitted</p>
-              </div>
-              <Badge className="bg-success text-success-foreground">Completed</Badge>
-            </div>
+            )}
           </CardContent>
         </Card>
 
@@ -108,27 +271,25 @@ const LearnerDashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-200">
-              <div>
-                <p className="font-medium">Mathematics Test</p>
-                <p className="text-sm text-muted-foreground">Last week</p>
+            {recentGrades.length > 0 ? (
+              recentGrades.map((grade) => (
+                <div key={grade.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-200">
+                  <div>
+                    <p className="font-medium">{grade.title}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {grade.gradedAt ? format(new Date(grade.gradedAt), 'MMM d') : 'Recently graded'}
+                    </p>
+                  </div>
+                  <Badge className={grade.percentage >= 80 ? "bg-success text-success-foreground" : grade.percentage >= 60 ? "bg-info text-info-foreground" : "bg-destructive text-destructive-foreground"}>
+                    {grade.percentage}%
+                  </Badge>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-4 text-muted-foreground">
+                <p>No graded assignments yet</p>
               </div>
-              <Badge className="bg-success text-success-foreground">92%</Badge>
-            </div>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-200">
-              <div>
-                <p className="font-medium">Science Quiz</p>
-                <p className="text-sm text-muted-foreground">2 weeks ago</p>
-              </div>
-              <Badge className="bg-info text-info-foreground">88%</Badge>
-            </div>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-200">
-              <div>
-                <p className="font-medium">English Assignment</p>
-                <p className="text-sm text-muted-foreground">3 weeks ago</p>
-              </div>
-              <Badge className="bg-success text-success-foreground">95%</Badge>
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>
