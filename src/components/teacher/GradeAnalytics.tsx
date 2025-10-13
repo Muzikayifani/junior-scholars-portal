@@ -76,7 +76,7 @@ const GradeAnalytics = () => {
           class:classes(name),
           results(marks_obtained, status, learner_id)
         `)
-        .eq('teacher_id', profile.id);
+        .eq('teacher_id', profile.user_id);
 
       if (selectedClass !== 'all') {
         assessmentQuery = assessmentQuery.eq('class_id', selectedClass);

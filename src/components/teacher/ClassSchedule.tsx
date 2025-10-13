@@ -56,7 +56,7 @@ const ClassSchedule = () => {
     setLoading(true);
     const formData = new FormData(e.target as HTMLFormElement);
     const data = {
-      teacher_id: profile.id,
+      teacher_id: profile.user_id,
       class_id: formData.get('class_id') as string,
       subject_id: formData.get('subject_id') as string,
       day_of_week: parseInt(formData.get('day_of_week') as string),

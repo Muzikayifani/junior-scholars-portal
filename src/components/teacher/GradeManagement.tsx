@@ -46,7 +46,7 @@ const GradeManagement = () => {
         class:classes(name, grade_level),
         subject:subjects(name, code)
       `)
-      .eq('teacher_id', profile.id)
+      .eq('teacher_id', profile.user_id)
       .order('created_at', { ascending: false });
 
     if (error) {
