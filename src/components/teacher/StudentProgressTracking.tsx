@@ -41,7 +41,8 @@ const StudentProgressTracking = () => {
     
     const { data, error } = await supabase
       .from('classes')
-      .select('*');
+      .select('*')
+      .eq('teacher_id', profile.user_id);
     
     if (error) {
       toast({
