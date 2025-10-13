@@ -120,10 +120,19 @@ export default function Schedule() {
   };
 
   const formatTime = (timeString: string) => {
-    const [hours, minutes] = timeString.split(':');
-    const hour = parseInt(hours);
-    const period = hour >= 12 ? 'PM' : 'AM';
-    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    if (!timeString) return 'N/A';
+    
+    // Handle both "HH:MM" and "HH:MM:SS" formats from database
+    const parts = timeString.split(':');
+    if (parts.length < 2) return timeString;
+    
+    const hours = parseInt(parts[0], 10);
+    const minutes = parts[1];
+    
+    if (isNaN(hours)) return timeString;
+    
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHour = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
     return `${displayHour}:${minutes} ${period}`;
   };
 
@@ -147,9 +156,18 @@ export default function Schedule() {
   const todaySchedule = getTodaySchedule();
   const currentTime = new Date();
   const nextClass = todaySchedule.find(item => {
-    const [hours, minutes] = item.start_time.split(':');
+    if (!item.start_time) return false;
+    
+    const parts = item.start_time.split(':');
+    if (parts.length < 2) return false;
+    
+    const hours = parseInt(parts[0], 10);
+    const minutes = parseInt(parts[1], 10);
+    
+    if (isNaN(hours) || isNaN(minutes)) return false;
+    
     const classTime = new Date();
-    classTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    classTime.setHours(hours, minutes, 0, 0);
     return classTime > currentTime;
   });
 
