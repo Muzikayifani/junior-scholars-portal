@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings";
 import MyClasses from "./pages/MyClasses";
 import Assignments from "./pages/Assignments";
+import Assessments from "./pages/Assessments";
 import Results from "./pages/Results";
 import Schedule from "./pages/Schedule";
 import TeacherPortal from "./components/teacher/TeacherPortal";
@@ -42,6 +43,7 @@ const App = () => (
               <Route path="/teacher-portal" element={<Layout><TeacherPortal /></Layout>} />
               <Route path="/my-classes" element={<Layout><MyClasses /></Layout>} />
               <Route path="/assignments" element={<Layout><Assignments /></Layout>} />
+              <Route path="/assessments" element={<Layout><Assessments /></Layout>} />
               <Route path="/results" element={<Layout><Results /></Layout>} />
               <Route path="/schedule" element={<Layout><Schedule /></Layout>} />
               <Route path="/children" element={<Layout><div className="animate-fade-in">My Children - Coming Soon</div></Layout>} />
