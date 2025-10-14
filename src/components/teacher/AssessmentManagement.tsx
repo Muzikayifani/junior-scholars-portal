@@ -7,16 +7,55 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { FileText, Eye, Edit, Trash2, Calendar } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const AssessmentManagement = () => {
   const { profile } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [assessments, setAssessments] = useState<any[]>([]);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedAssessment, setSelectedAssessment] = useState<any>(null);
+  const [classes, setClasses] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const [editLoading, setEditLoading] = useState(false);
 
   useEffect(() => {
     loadAssessments();
+    if (profile?.role === 'teacher') {
+      loadClassesAndSubjects();
+    }
   }, [profile]);
+
+  const loadClassesAndSubjects = async () => {
+    if (!profile?.user_id) return;
+    
+    try {
+      const [classesResult, subjectsResult] = await Promise.all([
+        supabase.from('classes').select('*').eq('teacher_id', profile.user_id),
+        supabase.from('subjects').select('*')
+      ]);
+      
+      if (classesResult.error) throw classesResult.error;
+      if (subjectsResult.error) throw subjectsResult.error;
+      
+      setClasses(classesResult.data || []);
+      setSubjects(subjectsResult.data || []);
+    } catch (error: any) {
+      console.error('Error loading classes and subjects:', error);
+    }
+  };
 
   const loadAssessments = async () => {
     if (!profile) return;
@@ -154,6 +193,66 @@ const AssessmentManagement = () => {
     });
   };
 
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const handleViewDetails = (assessment: any) => {
+    setSelectedAssessment(assessment);
+    setViewDialogOpen(true);
+  };
+
+  const handleEditAssessment = (assessment: any) => {
+    setSelectedAssessment(assessment);
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdateAssessment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedAssessment || !profile) return;
+    
+    setEditLoading(true);
+    
+    const formData = new FormData(e.target as HTMLFormElement);
+    const data = {
+      title: formData.get('title') as string,
+      description: formData.get('description') as string,
+      type: formData.get('type') as string,
+      class_id: formData.get('class_id') as string,
+      subject_id: formData.get('subject_id') as string,
+      total_marks: parseInt(formData.get('total_marks') as string) || 100,
+      due_date: formData.get('due_date') as string,
+    };
+
+    const { error } = await supabase
+      .from('assessments')
+      .update(data)
+      .eq('id', selectedAssessment.id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Assessment updated successfully!",
+      });
+      setEditDialogOpen(false);
+      loadAssessments();
+    }
+    
+    setEditLoading(false);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -224,6 +323,7 @@ const AssessmentManagement = () => {
                             variant="outline"
                             size="sm"
                             title="View Details"
+                            onClick={() => handleViewDetails(assessment)}
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
@@ -233,6 +333,7 @@ const AssessmentManagement = () => {
                                 variant="outline"
                                 size="sm"
                                 title="Edit Assessment"
+                                onClick={() => handleEditAssessment(assessment)}
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
@@ -256,6 +357,237 @@ const AssessmentManagement = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* View Details Dialog */}
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Assessment Details
+            </DialogTitle>
+            <DialogDescription>
+              Complete information about this assessment
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedAssessment && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Title</Label>
+                  <p className="font-medium">{selectedAssessment.title}</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Type</Label>
+                  <div>
+                    <Badge variant="outline">{selectedAssessment.type}</Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Class</Label>
+                  <p className="font-medium">
+                    {selectedAssessment.class?.name} (Grade {selectedAssessment.class?.grade_level})
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Subject</Label>
+                  <p className="font-medium">{selectedAssessment.subject?.name}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Total Marks</Label>
+                  <p className="font-medium">{selectedAssessment.total_marks}</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Due Date</Label>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <p className="font-medium">
+                      {selectedAssessment.due_date ? formatDateTime(selectedAssessment.due_date) : 'Not set'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-muted-foreground">Status</Label>
+                <div>
+                  {selectedAssessment.due_date && getStatusBadge(selectedAssessment.due_date)}
+                </div>
+              </div>
+
+              {selectedAssessment.description && (
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Description</Label>
+                  <p className="text-sm whitespace-pre-wrap bg-muted/50 p-3 rounded-md">
+                    {selectedAssessment.description}
+                  </p>
+                </div>
+              )}
+
+              {selectedAssessment.instructions && (
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Instructions</Label>
+                  <p className="text-sm whitespace-pre-wrap bg-muted/50 p-3 rounded-md">
+                    {selectedAssessment.instructions}
+                  </p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Created At</Label>
+                  <p className="text-sm">{formatDateTime(selectedAssessment.created_at)}</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Last Updated</Label>
+                  <p className="text-sm">{formatDateTime(selectedAssessment.updated_at)}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Assessment Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="h-5 w-5" />
+              Edit Assessment
+            </DialogTitle>
+            <DialogDescription>
+              Update the assessment details below
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedAssessment && (
+            <form onSubmit={handleUpdateAssessment} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-title">Title</Label>
+                  <Input
+                    id="edit-title"
+                    name="title"
+                    defaultValue={selectedAssessment.title}
+                    placeholder="Assessment title"
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="edit-type">Type</Label>
+                  <Select name="type" defaultValue={selectedAssessment.type} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="quiz">Quiz</SelectItem>
+                      <SelectItem value="assignment">Assignment</SelectItem>
+                      <SelectItem value="test">Test</SelectItem>
+                      <SelectItem value="exam">Exam</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-class">Class</Label>
+                  <Select name="class_id" defaultValue={selectedAssessment.class_id} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select class" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {classes.map((cls) => (
+                        <SelectItem key={cls.id} value={cls.id}>
+                          {cls.name} (Grade {cls.grade_level})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="edit-subject">Subject</Label>
+                  <Select name="subject_id" defaultValue={selectedAssessment.subject_id} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select subject" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subjects.map((subject) => (
+                        <SelectItem key={subject.id} value={subject.id}>
+                          {subject.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-total-marks">Total Marks</Label>
+                  <Input
+                    id="edit-total-marks"
+                    name="total_marks"
+                    type="number"
+                    defaultValue={selectedAssessment.total_marks}
+                    min="1"
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="edit-due-date">Due Date</Label>
+                  <Input
+                    id="edit-due-date"
+                    name="due_date"
+                    type="datetime-local"
+                    defaultValue={selectedAssessment.due_date ? new Date(selectedAssessment.due_date).toISOString().slice(0, 16) : ''}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-description">Description</Label>
+                <Textarea
+                  id="edit-description"
+                  name="description"
+                  defaultValue={selectedAssessment.description || ''}
+                  placeholder="Assessment description and instructions"
+                  rows={4}
+                />
+              </div>
+
+              <div className="flex gap-2 justify-end">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setEditDialogOpen(false)}
+                  disabled={editLoading}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={editLoading}>
+                  {editLoading ? "Updating..." : "Update Assessment"}
+                </Button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
