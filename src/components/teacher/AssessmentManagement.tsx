@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, Eye, Edit, Trash2, Calendar } from 'lucide-react';
+import { FileText, Eye, Edit, Trash2, Calendar, RefreshCw, AlertCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -18,6 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const AssessmentManagement = () => {
   const { profile } = useAuth();
@@ -30,6 +31,9 @@ const AssessmentManagement = () => {
   const [classes, setClasses] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
   const [editLoading, setEditLoading] = useState(false);
+  const [dataError, setDataError] = useState<string | null>(null);
+  const [classesLoading, setClassesLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadAssessments();
@@ -41,6 +45,7 @@ const AssessmentManagement = () => {
   const loadClassesAndSubjects = async () => {
     if (!profile?.user_id) return;
     
+    setClassesLoading(true);
     try {
       const [classesResult, subjectsResult] = await Promise.all([
         supabase.from('classes').select('*').eq('teacher_id', profile.user_id),
@@ -54,13 +59,21 @@ const AssessmentManagement = () => {
       setSubjects(subjectsResult.data || []);
     } catch (error: any) {
       console.error('Error loading classes and subjects:', error);
+      toast({
+        title: "Error Loading Data",
+        description: "Failed to load classes and subjects for editing.",
+        variant: "destructive"
+      });
+    } finally {
+      setClassesLoading(false);
     }
   };
 
-  const loadAssessments = async () => {
+  const loadAssessments = async (showRefreshToast = false) => {
     if (!profile) return;
     
     setLoading(true);
+    setDataError(null);
     
     try {
       if (profile.role === 'teacher') {
@@ -135,14 +148,28 @@ const AssessmentManagement = () => {
       }
 
     } catch (error: any) {
+      const errorMessage = error.message || "Failed to load assessments. Please try again.";
+      setDataError(errorMessage);
       toast({
-        title: "Error",
-        description: error.message,
+        title: "Error Loading Assessments",
+        description: errorMessage,
         variant: "destructive"
       });
+    } finally {
+      setLoading(false);
+      if (showRefreshToast) {
+        toast({
+          title: "Refreshed",
+          description: "Assessment data has been refreshed.",
+        });
+      }
     }
-    
-    setLoading(false);
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadAssessments(true);
+    setRefreshing(false);
   };
 
   const handleDeleteAssessment = async (assessmentId: string) => {
@@ -150,26 +177,29 @@ const AssessmentManagement = () => {
       return;
     }
     
-    setLoading(true);
-    const { error } = await supabase
-      .from('assessments')
-      .delete()
-      .eq('id', assessmentId);
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('assessments')
+        .delete()
+        .eq('id', assessmentId);
 
-    if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive"
-      });
-    } else {
+      if (error) throw error;
+      
       toast({
         title: "Success",
         description: "Assessment deleted successfully!",
       });
-      loadAssessments();
+      await loadAssessments();
+    } catch (error: any) {
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to delete assessment. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const getStatusBadge = (dueDate: string) => {
@@ -217,40 +247,42 @@ const AssessmentManagement = () => {
     e.preventDefault();
     if (!selectedAssessment || !profile) return;
     
-    setEditLoading(true);
-    
-    const formData = new FormData(e.target as HTMLFormElement);
-    const data = {
-      title: formData.get('title') as string,
-      description: formData.get('description') as string,
-      type: formData.get('type') as string,
-      class_id: formData.get('class_id') as string,
-      subject_id: formData.get('subject_id') as string,
-      total_marks: parseInt(formData.get('total_marks') as string) || 100,
-      due_date: formData.get('due_date') as string,
-    };
+    try {
+      setEditLoading(true);
+      
+      const formData = new FormData(e.target as HTMLFormElement);
+      const data = {
+        title: formData.get('title') as string,
+        description: formData.get('description') as string,
+        type: formData.get('type') as string,
+        class_id: formData.get('class_id') as string,
+        subject_id: formData.get('subject_id') as string,
+        total_marks: parseInt(formData.get('total_marks') as string) || 100,
+        due_date: formData.get('due_date') as string,
+      };
 
-    const { error } = await supabase
-      .from('assessments')
-      .update(data)
-      .eq('id', selectedAssessment.id);
+      const { error } = await supabase
+        .from('assessments')
+        .update(data)
+        .eq('id', selectedAssessment.id);
 
-    if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive"
-      });
-    } else {
+      if (error) throw error;
+      
       toast({
         title: "Success",
         description: "Assessment updated successfully!",
       });
       setEditDialogOpen(false);
-      loadAssessments();
+      await loadAssessments();
+    } catch (error: any) {
+      toast({
+        title: "Update Failed",
+        description: error.message || "Failed to update assessment. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setEditLoading(false);
     }
-    
-    setEditLoading(false);
   };
 
   return (
@@ -263,7 +295,33 @@ const AssessmentManagement = () => {
           </h2>
           <p className="text-muted-foreground">View assessments {profile?.role === 'teacher' ? 'you created' : 'assigned to you'}</p>
         </div>
+        <Button 
+          onClick={handleRefresh} 
+          disabled={loading || refreshing}
+          variant="outline"
+          size="sm"
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+          {refreshing ? 'Refreshing...' : 'Refresh'}
+        </Button>
       </div>
+
+      {dataError && !loading && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {dataError}
+            <Button 
+              variant="link" 
+              size="sm" 
+              onClick={() => loadAssessments()}
+              className="ml-2 h-auto p-0"
+            >
+              Try again
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Card>
         <CardHeader>
@@ -271,15 +329,38 @@ const AssessmentManagement = () => {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Loading assessments...</p>
+            <div className="text-center py-12">
+              <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+              <p className="text-lg font-medium mb-2">Loading assessments...</p>
+              <p className="text-sm text-muted-foreground">Please wait while we fetch your data</p>
+            </div>
+          ) : dataError ? (
+            <div className="text-center py-12">
+              <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive opacity-50" />
+              <p className="text-lg font-medium mb-2">Failed to Load Assessments</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                There was a problem loading your assessments. Please check your connection and try again.
+              </p>
+              <Button onClick={() => loadAssessments()} variant="outline">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Retry
+              </Button>
             </div>
           ) : assessments.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No assessments created yet.</p>
-              <p className="text-sm">Create your first assessment in the "Create" tab.</p>
+            <div className="text-center py-12 text-muted-foreground">
+              <FileText className="h-16 w-16 mx-auto mb-4 opacity-50" />
+              <p className="text-lg font-medium mb-2">No Assessments Found</p>
+              <p className="text-sm mb-4">
+                {profile?.role === 'teacher' 
+                  ? "You haven't created any assessments yet. Get started by creating your first assessment."
+                  : "No assessments have been assigned to you yet."
+                }
+              </p>
+              {profile?.role === 'teacher' && (
+                <p className="text-xs text-muted-foreground">
+                  Tip: Navigate to the "Create" tab to add a new assessment
+                </p>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -505,32 +586,44 @@ const AssessmentManagement = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="edit-class">Class</Label>
-                  <Select name="class_id" defaultValue={selectedAssessment.class_id} required>
+                  <Select name="class_id" defaultValue={selectedAssessment.class_id} required disabled={classesLoading}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select class" />
+                      <SelectValue placeholder={classesLoading ? "Loading classes..." : "Select class"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {classes.map((cls) => (
-                        <SelectItem key={cls.id} value={cls.id}>
-                          {cls.name} (Grade {cls.grade_level})
-                        </SelectItem>
-                      ))}
+                      {classes.length === 0 ? (
+                        <div className="p-2 text-sm text-muted-foreground text-center">
+                          No classes available
+                        </div>
+                      ) : (
+                        classes.map((cls) => (
+                          <SelectItem key={cls.id} value={cls.id}>
+                            {cls.name} (Grade {cls.grade_level})
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="edit-subject">Subject</Label>
-                  <Select name="subject_id" defaultValue={selectedAssessment.subject_id} required>
+                  <Select name="subject_id" defaultValue={selectedAssessment.subject_id} required disabled={classesLoading}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select subject" />
+                      <SelectValue placeholder={classesLoading ? "Loading subjects..." : "Select subject"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {subjects.map((subject) => (
-                        <SelectItem key={subject.id} value={subject.id}>
-                          {subject.name}
-                        </SelectItem>
-                      ))}
+                      {subjects.length === 0 ? (
+                        <div className="p-2 text-sm text-muted-foreground text-center">
+                          No subjects available
+                        </div>
+                      ) : (
+                        subjects.map((subject) => (
+                          <SelectItem key={subject.id} value={subject.id}>
+                            {subject.name}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
