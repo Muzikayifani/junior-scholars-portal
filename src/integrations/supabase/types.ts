@@ -342,6 +342,7 @@ export type Database = {
           learner_id: string
           marks_obtained: number
           status: string | null
+          submission_path: string | null
           submitted_at: string | null
           updated_at: string
         }
@@ -354,6 +355,7 @@ export type Database = {
           learner_id: string
           marks_obtained?: number
           status?: string | null
+          submission_path?: string | null
           submitted_at?: string | null
           updated_at?: string
         }
@@ -366,6 +368,7 @@ export type Database = {
           learner_id?: string
           marks_obtained?: number
           status?: string | null
+          submission_path?: string | null
           submitted_at?: string | null
           updated_at?: string
         }
