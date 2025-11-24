@@ -431,26 +431,14 @@ export type Database = {
           user_id: string
         }[]
       }
-      get_current_user_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      is_teacher: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      get_current_user_role: { Args: never; Returns: string }
+      is_teacher: { Args: never; Returns: boolean }
       user_is_enrolled_in_class: {
         Args: { target_class_id: string }
         Returns: boolean
       }
-      user_is_taught_by: {
-        Args: { teacher_user_id: string }
-        Returns: boolean
-      }
-      user_owns_class: {
-        Args: { target_class_id: string }
-        Returns: boolean
-      }
+      user_is_taught_by: { Args: { teacher_user_id: string }; Returns: boolean }
+      user_owns_class: { Args: { target_class_id: string }; Returns: boolean }
       user_teaches_student: {
         Args: { student_user_id: string }
         Returns: boolean
