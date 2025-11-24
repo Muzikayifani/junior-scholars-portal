@@ -287,6 +287,48 @@ export type Database = {
           },
         ]
       }
+      parent_child_relationships: {
+        Row: {
+          child_user_id: string
+          created_at: string | null
+          id: string
+          parent_user_id: string
+          relationship_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          child_user_id: string
+          created_at?: string | null
+          id?: string
+          parent_user_id: string
+          relationship_type?: string
+          updated_at?: string | null
+        }
+        Update: {
+          child_user_id?: string
+          created_at?: string | null
+          id?: string
+          parent_user_id?: string
+          relationship_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_child_relationships_child_user_id_fkey"
+            columns: ["child_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "parent_child_relationships_parent_user_id_fkey"
+            columns: ["parent_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -432,11 +474,19 @@ export type Database = {
         }[]
       }
       get_current_user_role: { Args: never; Returns: string }
+      get_user_children: {
+        Args: never
+        Returns: {
+          child_user_id: string
+        }[]
+      }
+      is_parent: { Args: never; Returns: boolean }
       is_teacher: { Args: never; Returns: boolean }
       user_is_enrolled_in_class: {
         Args: { target_class_id: string }
         Returns: boolean
       }
+      user_is_parent_of: { Args: { child_user_id: string }; Returns: boolean }
       user_is_taught_by: { Args: { teacher_user_id: string }; Returns: boolean }
       user_owns_class: { Args: { target_class_id: string }; Returns: boolean }
       user_teaches_student: {
