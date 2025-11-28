@@ -298,6 +298,198 @@ const LearnerDashboard = () => {
 };
 
 const ParentDashboard = () => {
+  const { profile } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    childrenCount: 0,
+    totalPendingTasks: 0,
+    averagePerformance: 0,
+    upcomingEvents: 0
+  });
+  const [childrenData, setChildrenData] = useState<any[]>([]);
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!profile?.user_id) return;
+
+    const fetchParentData = async () => {
+      setLoading(true);
+      try {
+        // Fetch children relationships
+        const { data: relationships, error: relationshipsError } = await supabase
+          .from('parent_child_relationships')
+          .select('child_user_id')
+          .eq('parent_user_id', profile.user_id);
+
+        if (relationshipsError) throw relationshipsError;
+
+        const childUserIds = relationships?.map(r => r.child_user_id) || [];
+        const childrenCount = childUserIds.length;
+
+        if (childUserIds.length === 0) {
+          setStats({ childrenCount: 0, totalPendingTasks: 0, averagePerformance: 0, upcomingEvents: 0 });
+          setLoading(false);
+          return;
+        }
+
+        // Fetch children profiles
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, first_name, last_name')
+          .in('user_id', childUserIds);
+
+        if (profilesError) throw profilesError;
+
+        // Fetch learner records for each child
+        const { data: learnerRecords, error: learnerError } = await supabase
+          .from('learners')
+          .select('id, user_id, class_id, class:classes(name, grade_level)')
+          .in('user_id', childUserIds)
+          .eq('status', 'active');
+
+        if (learnerError) throw learnerError;
+
+        const learnerIds = learnerRecords?.map(l => l.id) || [];
+        const classIds = learnerRecords?.map(l => l.class_id) || [];
+
+        // Fetch pending assessments
+        const { data: assessments, error: assessmentsError } = await supabase
+          .from('assessments')
+          .select('id, title, class_id, results!left(id, status, learner_id)')
+          .in('class_id', classIds)
+          .eq('is_published', true);
+
+        if (assessmentsError) throw assessmentsError;
+
+        // Count pending tasks (assessments without results or with pending status)
+        let totalPendingTasks = 0;
+        assessments?.forEach(assessment => {
+          const results = assessment.results as any[];
+          learnerIds.forEach(learnerId => {
+            const hasResult = results?.some(r => r.learner_id === learnerId && r.status !== 'pending');
+            if (!hasResult) {
+              totalPendingTasks++;
+            }
+          });
+        });
+
+        // Fetch grades for all children
+        const { data: resultsData, error: resultsError } = await supabase
+          .from('results')
+          .select(`
+            id, marks_obtained, status, graded_at, feedback,
+            assessment:assessments(id, title, total_marks, type),
+            learner:learners!inner(user_id, id)
+          `)
+          .in('learner_id', learnerIds)
+          .eq('status', 'graded')
+          .order('graded_at', { ascending: false })
+          .limit(20);
+
+        if (resultsError) throw resultsError;
+
+        // Calculate average performance across all children
+        let averagePerformance = 0;
+        if (resultsData && resultsData.length > 0) {
+          const totalPercentage = resultsData.reduce((sum, result) => {
+            const assessment = result.assessment as any;
+            const percentage = (result.marks_obtained / assessment.total_marks) * 100;
+            return sum + percentage;
+          }, 0);
+          averagePerformance = Math.round(totalPercentage / resultsData.length);
+        }
+
+        // Get upcoming schedule events
+        const today = new Date().getDay();
+        const { data: scheduleData, error: scheduleError } = await supabase
+          .from('class_schedule')
+          .select('id, day_of_week, start_time')
+          .in('class_id', classIds)
+          .gte('day_of_week', today)
+          .order('day_of_week')
+          .order('start_time')
+          .limit(10);
+
+        if (scheduleError) throw scheduleError;
+
+        const upcomingEvents = scheduleData?.length || 0;
+
+        // Prepare children data with their stats
+        const childrenWithStats = await Promise.all(
+          profiles?.map(async (child) => {
+            const childLearnerRecords = learnerRecords?.filter(l => l.user_id === child.user_id) || [];
+            const childLearnerIds = childLearnerRecords.map(l => l.id);
+            
+            const childResults = resultsData?.filter(r => {
+              const learner = r.learner as any;
+              return learner.user_id === child.user_id;
+            }) || [];
+
+            let avgGrade = 0;
+            if (childResults.length > 0) {
+              const total = childResults.reduce((sum, r) => {
+                const assessment = r.assessment as any;
+                return sum + (r.marks_obtained / assessment.total_marks) * 100;
+              }, 0);
+              avgGrade = Math.round(total / childResults.length);
+            }
+
+            const primaryClass = childLearnerRecords[0]?.class as any;
+
+            return {
+              userId: child.user_id,
+              name: child.full_name || `${child.first_name || ''} ${child.last_name || ''}`.trim(),
+              className: primaryClass?.name || 'N/A',
+              gradeLevel: primaryClass?.grade_level || 0,
+              averageGrade: avgGrade
+            };
+          }) || []
+        );
+
+        // Get recent activity (last 5 graded results)
+        const recentResults = resultsData?.slice(0, 5).map((r: any) => {
+          const learner = r.learner as any;
+          const childProfile = profiles?.find(p => p.user_id === learner.user_id);
+          const assessment = r.assessment as any;
+          
+          return {
+            id: r.id,
+            childName: childProfile?.full_name || 'Unknown',
+            activity: `${assessment.title}`,
+            type: assessment.type,
+            gradedAt: r.graded_at,
+            percentage: Math.round((r.marks_obtained / assessment.total_marks) * 100)
+          };
+        }) || [];
+
+        setStats({
+          childrenCount,
+          totalPendingTasks,
+          averagePerformance,
+          upcomingEvents
+        });
+        setChildrenData(childrenWithStats);
+        setRecentActivity(recentResults);
+
+      } catch (error) {
+        console.error('Error fetching parent data:', error);
+        toast.error('Failed to load dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchParentData();
+  }, [profile]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <LoadingSpinner text="Loading dashboard..." />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="animate-slide-up">
@@ -312,7 +504,7 @@ const ParentDashboard = () => {
             <Users className="h-4 w-4 text-muted-foreground transition-all duration-300 hover:scale-110 hover:text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">2</div>
+            <div className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">{stats.childrenCount}</div>
             <p className="text-xs text-muted-foreground">Active learners</p>
           </CardContent>
         </Card>
@@ -323,7 +515,7 @@ const ParentDashboard = () => {
             <ClipboardList className="h-4 w-4 text-muted-foreground transition-all duration-300 hover:scale-110 hover:text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">7</div>
+            <div className="text-2xl font-bold text-destructive">{stats.totalPendingTasks}</div>
             <p className="text-xs text-muted-foreground">Across all children</p>
           </CardContent>
         </Card>
@@ -334,7 +526,7 @@ const ParentDashboard = () => {
             <TrendingUp className="h-4 w-4 text-muted-foreground transition-all duration-300 hover:scale-110 hover:text-success" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-success">87%</div>
+            <div className="text-2xl font-bold text-success">{stats.averagePerformance}%</div>
             <p className="text-xs text-muted-foreground">Family average</p>
           </CardContent>
         </Card>
@@ -345,7 +537,7 @@ const ParentDashboard = () => {
             <Calendar className="h-4 w-4 text-muted-foreground transition-all duration-300 hover:scale-110 hover:text-info" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-info">3</div>
+            <div className="text-2xl font-bold text-info">{stats.upcomingEvents}</div>
             <p className="text-xs text-muted-foreground">This week</p>
           </CardContent>
         </Card>
@@ -360,20 +552,25 @@ const ParentDashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-200">
-              <div>
-                <p className="font-medium">Emma Johnson</p>
-                <p className="text-sm text-muted-foreground">Grade 5 • Class 5A</p>
+            {childrenData.length > 0 ? (
+              childrenData.map((child) => (
+                <div key={child.userId} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-200">
+                  <div>
+                    <p className="font-medium">{child.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Grade {child.gradeLevel} • {child.className}
+                    </p>
+                  </div>
+                  <Badge className={child.averageGrade >= 80 ? "bg-success text-success-foreground" : child.averageGrade >= 60 ? "bg-info text-info-foreground" : "bg-muted text-muted-foreground"}>
+                    {child.averageGrade > 0 ? `${child.averageGrade}% Avg` : 'No grades'}
+                  </Badge>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-4 text-muted-foreground">
+                <p>No children linked yet</p>
               </div>
-              <Badge className="bg-info text-info-foreground">89% Avg</Badge>
-            </div>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-200">
-              <div>
-                <p className="font-medium">James Johnson</p>
-                <p className="text-sm text-muted-foreground">Grade 3 • Class 3B</p>
-              </div>
-              <Badge className="bg-success text-success-foreground">91% Avg</Badge>
-            </div>
+            )}
           </CardContent>
         </Card>
 
@@ -385,20 +582,23 @@ const ParentDashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-200">
-              <CheckCircle className="h-4 w-4 text-success" />
-              <div className="flex-1">
-                <p className="font-medium">Emma completed Math assignment</p>
-                <p className="text-sm text-muted-foreground">2 hours ago</p>
+            {recentActivity.length > 0 ? (
+              recentActivity.map((activity) => (
+                <div key={activity.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-200">
+                  <Award className={activity.percentage >= 80 ? "h-4 w-4 text-success" : activity.percentage >= 60 ? "h-4 w-4 text-info" : "h-4 w-4 text-muted-foreground"} />
+                  <div className="flex-1">
+                    <p className="font-medium">{activity.childName} - {activity.activity}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {activity.gradedAt ? format(new Date(activity.gradedAt), 'MMM d') : 'Recently graded'} • {activity.percentage}%
+                    </p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-4 text-muted-foreground">
+                <p>No recent activity</p>
               </div>
-            </div>
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-200">
-              <Award className="h-4 w-4 text-info" />
-              <div className="flex-1">
-                <p className="font-medium">James received Science quiz result</p>
-                <p className="text-sm text-muted-foreground">1 day ago</p>
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>
