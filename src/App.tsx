@@ -19,6 +19,7 @@ import Layout from "./components/Layout";
 import NotFound from "./pages/NotFound";
 import Communication from "./pages/Communication";
 import Children from "./pages/Children";
+import ProgressReports from "./pages/ProgressReports";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -48,7 +49,7 @@ const App = () => (
               <Route path="/results" element={<Layout><Results /></Layout>} />
               <Route path="/schedule" element={<Layout><Schedule /></Layout>} />
               <Route path="/children" element={<Layout><Children /></Layout>} />
-              <Route path="/reports" element={<Layout><div className="animate-fade-in">Reports - Coming Soon</div></Layout>} />
+              <Route path="/reports" element={<Layout><ProgressReports /></Layout>} />
               <Route path="/communication" element={<Layout><Communication /></Layout>} />
               <Route path="/classes" element={<Layout><MyClasses /></Layout>} />
               <Route path="/settings" element={<Layout><Settings /></Layout>} />
