@@ -9,7 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Users, Edit, Trash2, Filter, UserPlus } from 'lucide-react';
+import { Users, Edit, Trash2, Filter, UserPlus, Link2 } from 'lucide-react';
+import LinkParentDialog from './LinkParentDialog';
 
 const ManageStudents = () => {
   const { profile } = useAuth();
@@ -22,6 +23,7 @@ const ManageStudents = () => {
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('');
   const [editingLearner, setEditingLearner] = useState<any>(null);
   const [showAddStudent, setShowAddStudent] = useState(false);
+  const [linkParentStudent, setLinkParentStudent] = useState<{ userId: string; name: string } | null>(null);
   const [editForm, setEditForm] = useState({
     student_number: '',
     full_name: '',
@@ -454,7 +456,7 @@ const ManageStudents = () => {
                     <TableHead>Email</TableHead>
                     <TableHead>Emergency Contact</TableHead>
                     <TableHead>Date of Birth</TableHead>
-                    <TableHead className="w-[120px]">Actions</TableHead>
+                    <TableHead className="w-[180px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -571,6 +573,18 @@ const ManageStudents = () => {
                           </Dialog>
                           
                           <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setLinkParentStudent({
+                              userId: learner.user_id,
+                              name: learner.profile?.full_name || 'Student'
+                            })}
+                            title="Link Parent"
+                          >
+                            <Link2 className="h-4 w-4" />
+                          </Button>
+                          
+                          <Button
                             variant="destructive"
                             size="sm"
                             onClick={() => handleDeleteLearner(learner.id)}
@@ -598,6 +612,16 @@ const ManageStudents = () => {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Link Parent Dialog */}
+      {linkParentStudent && (
+        <LinkParentDialog
+          open={!!linkParentStudent}
+          onOpenChange={(open) => !open && setLinkParentStudent(null)}
+          studentUserId={linkParentStudent.userId}
+          studentName={linkParentStudent.name}
+        />
       )}
     </div>
   );
