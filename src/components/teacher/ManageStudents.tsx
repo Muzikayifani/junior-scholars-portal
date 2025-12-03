@@ -95,10 +95,10 @@ const ManageStudents = () => {
     setEditingLearner(learner);
     setEditForm({
       student_number: learner.student_number || '',
-      full_name: learner['Student FullName'] || '',
-      emergency_contact: learner.emergency_contact || '',
-      address: learner.address || '',
-      date_of_birth: learner.date_of_birth || '',
+      full_name: learner.profile?.full_name || '',
+      emergency_contact: '',
+      address: '',
+      date_of_birth: '',
       class_id: learner.class_id || ''
     });
   };
@@ -112,10 +112,6 @@ const ManageStudents = () => {
       .from('learners')
       .update({
         student_number: editForm.student_number,
-        'Student FullName': editForm.full_name,
-        emergency_contact: editForm.emergency_contact,
-        address: editForm.address,
-        date_of_birth: editForm.date_of_birth || null,
         class_id: editForm.class_id
       })
       .eq('id', editingLearner.id);
