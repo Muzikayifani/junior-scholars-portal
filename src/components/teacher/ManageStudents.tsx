@@ -26,9 +26,9 @@ const ManageStudents = () => {
   const [linkParentStudent, setLinkParentStudent] = useState<{ userId: string; name: string } | null>(null);
   const [editForm, setEditForm] = useState({
     student_number: '',
-    full_name: '',
-    emergency_contact: '',
-    address: '',
+    first_name: '',
+    last_name: '',
+    phone: '',
     date_of_birth: '',
     class_id: ''
   });
@@ -95,10 +95,10 @@ const ManageStudents = () => {
     setEditingLearner(learner);
     setEditForm({
       student_number: learner.student_number || '',
-      full_name: learner.profile?.full_name || '',
-      emergency_contact: '',
-      address: '',
-      date_of_birth: '',
+      first_name: learner.profile?.first_name || '',
+      last_name: learner.profile?.last_name || '',
+      phone: learner.profile?.phone || '',
+      date_of_birth: learner.profile?.date_of_birth || '',
       class_id: learner.class_id || ''
     });
   };
@@ -108,7 +108,9 @@ const ManageStudents = () => {
     if (!editingLearner) return;
     
     setLoading(true);
-    const { error } = await supabase
+    
+    // Update learner record
+    const { error: learnerError } = await supabase
       .from('learners')
       .update({
         student_number: editForm.student_number,
@@ -116,10 +118,33 @@ const ManageStudents = () => {
       })
       .eq('id', editingLearner.id);
 
-    if (error) {
+    if (learnerError) {
       toast({
         title: "Error",
-        description: error.message,
+        description: learnerError.message,
+        variant: "destructive"
+      });
+      setLoading(false);
+      return;
+    }
+
+    // Update profile record
+    const fullName = `${editForm.first_name} ${editForm.last_name}`.trim();
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({
+        first_name: editForm.first_name,
+        last_name: editForm.last_name,
+        full_name: fullName,
+        phone: editForm.phone || null,
+        date_of_birth: editForm.date_of_birth || null
+      })
+      .eq('user_id', editingLearner.user_id);
+
+    if (profileError) {
+      toast({
+        title: "Warning",
+        description: "Learner updated but profile update failed: " + profileError.message,
         variant: "destructive"
       });
     } else {
@@ -127,9 +152,10 @@ const ManageStudents = () => {
         title: "Success",
         description: "Student record updated successfully!",
       });
-      setEditingLearner(null);
-      loadLearners();
     }
+    
+    setEditingLearner(null);
+    loadLearners();
     setLoading(false);
   };
 
@@ -496,30 +522,32 @@ const ManageStudents = () => {
                                   />
                                 </div>
                                 
-                                <div className="space-y-2">
-                                  <Label htmlFor="full_name">Full Name</Label>
-                                  <Input
-                                    id="full_name"
-                                    value={editForm.full_name}
-                                    onChange={(e) => setEditForm({...editForm, full_name: e.target.value})}
-                                  />
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div className="space-y-2">
+                                    <Label htmlFor="first_name">First Name</Label>
+                                    <Input
+                                      id="first_name"
+                                      value={editForm.first_name}
+                                      onChange={(e) => setEditForm({...editForm, first_name: e.target.value})}
+                                    />
+                                  </div>
+                                  
+                                  <div className="space-y-2">
+                                    <Label htmlFor="last_name">Last Name</Label>
+                                    <Input
+                                      id="last_name"
+                                      value={editForm.last_name}
+                                      onChange={(e) => setEditForm({...editForm, last_name: e.target.value})}
+                                    />
+                                  </div>
                                 </div>
                                 
                                 <div className="space-y-2">
-                                  <Label htmlFor="emergency_contact">Emergency Contact</Label>
+                                  <Label htmlFor="phone">Phone</Label>
                                   <Input
-                                    id="emergency_contact"
-                                    value={editForm.emergency_contact}
-                                    onChange={(e) => setEditForm({...editForm, emergency_contact: e.target.value})}
-                                  />
-                                </div>
-                                
-                                <div className="space-y-2">
-                                  <Label htmlFor="address">Address</Label>
-                                  <Input
-                                    id="address"
-                                    value={editForm.address}
-                                    onChange={(e) => setEditForm({...editForm, address: e.target.value})}
+                                    id="phone"
+                                    value={editForm.phone}
+                                    onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
                                   />
                                 </div>
                                 
