@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import { 
   Users, 
   TrendingUp, 
@@ -49,6 +50,7 @@ interface ChildData {
 
 const Children = () => {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const [children, setChildren] = useState<ChildData[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -349,15 +351,27 @@ const Children = () => {
 
               {/* Action Buttons */}
               <div className="flex gap-2 pt-4 border-t">
-                <Button variant="outline" className="flex-1">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => navigate(`/schedule?child=${child.profile.user_id}`)}
+                >
                   <Calendar className="h-4 w-4 mr-2" />
                   View Schedule
                 </Button>
-                <Button variant="outline" className="flex-1">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => navigate(`/assignments?child=${child.profile.user_id}`)}
+                >
                   <ClipboardList className="h-4 w-4 mr-2" />
                   View Assignments
                 </Button>
-                <Button variant="outline" className="flex-1">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => navigate(`/results?child=${child.profile.user_id}`)}
+                >
                   <Award className="h-4 w-4 mr-2" />
                   View Results
                 </Button>

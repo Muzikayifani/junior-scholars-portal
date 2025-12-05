@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
-import { Award, TrendingUp, Calendar, BarChart3, FileText, Target } from 'lucide-react';
+import { Award, TrendingUp, Calendar, BarChart3, FileText, Target, ArrowLeft } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { format } from 'date-fns';
 
@@ -26,19 +27,90 @@ interface Result {
 
 export default function Results() {
   const { profile, user, loading: authLoading } = useAuth();
+  const [searchParams] = useSearchParams();
+  const childUserId = searchParams.get('child');
   const [results, setResults] = useState<Result[]>([]);
   const [loading, setLoading] = useState(true);
   const [averageScore, setAverageScore] = useState(0);
+  const [childName, setChildName] = useState<string>('');
 
   useEffect(() => {
     if (profile && user) {
       fetchResults();
     }
-  }, [profile, user]);
+  }, [profile, user, childUserId]);
 
   const fetchResults = async () => {
     try {
       setLoading(true);
+      
+      // If parent is viewing a specific child's results
+      if (profile?.role === 'parent' && childUserId) {
+        // Get child's name
+        const { data: childProfile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('user_id', childUserId)
+          .single();
+        
+        if (childProfile) setChildName(childProfile.full_name || 'Child');
+
+        // Get child's learner record
+        const { data: learnerData, error: learnerError } = await supabase
+          .from('learners')
+          .select('id')
+          .eq('user_id', childUserId)
+          .maybeSingle();
+
+        if (learnerError) throw learnerError;
+        if (!learnerData) {
+          setResults([]);
+          return;
+        }
+        
+        const { data, error } = await supabase
+          .from('results')
+          .select(`
+            id,
+            marks_obtained,
+            graded_at,
+            feedback,
+            assessments!results_assessment_id_fkey (
+              title,
+              type,
+              total_marks,
+              subjects (name),
+              classes (name)
+            )
+          `)
+          .eq('learner_id', learnerData.id)
+          .eq('status', 'graded')
+          .order('graded_at', { ascending: false });
+
+        if (error) throw error;
+        
+        const formattedData = data?.filter(item => item.assessments).map(item => ({
+          id: item.id,
+          marks_obtained: item.marks_obtained,
+          total_marks: item.assessments.total_marks,
+          percentage: item.marks_obtained ? Math.round((item.marks_obtained / item.assessments.total_marks) * 100) : 0,
+          graded_at: item.graded_at,
+          feedback: item.feedback,
+          assessment_title: item.assessments.title,
+          assessment_type: item.assessments.type,
+          subject_name: item.assessments.subjects?.name,
+          class_name: item.assessments.classes?.name
+        })) || [];
+        
+        setResults(formattedData);
+        
+        const validResults = formattedData.filter(r => r.marks_obtained !== null);
+        if (validResults.length > 0) {
+          const average = validResults.reduce((sum, r) => sum + r.percentage, 0) / validResults.length;
+          setAverageScore(Math.round(average));
+        }
+        return;
+      }
       
       if (profile?.role === 'learner') {
         // Learners see their own results
@@ -228,13 +300,24 @@ export default function Results() {
 
   return (
     <div className="animate-fade-in p-6 space-y-6">
+      {childUserId && profile?.role === 'parent' && (
+        <Button variant="ghost" className="mb-4" onClick={() => window.history.back()}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Children
+        </Button>
+      )}
+
       <div className="flex items-center gap-2 mb-6">
         <Award className="h-6 w-6 text-primary" />
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Results</h1>
+          <h1 className="text-2xl font-bold text-foreground">
+            {childUserId && childName ? `${childName}'s Results` : 'Results'}
+          </h1>
           <p className="text-muted-foreground">
             {profile?.role === 'teacher' 
               ? 'View and manage assessment results'
+              : childUserId 
+              ? 'Academic performance and grades'
               : 'Your academic performance and grades'
             }
           </p>
@@ -256,8 +339,8 @@ export default function Results() {
         </Card>
       ) : (
         <>
-          {/* Summary Cards for Learners */}
-          {profile?.role === 'learner' && (
+          {/* Summary Cards for Learners and Parent viewing child */}
+          {(profile?.role === 'learner' || (profile?.role === 'parent' && childUserId)) && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               <Card className="hover-lift">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
