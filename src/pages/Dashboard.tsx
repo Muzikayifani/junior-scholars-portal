@@ -391,12 +391,15 @@ const ParentDashboard = () => {
         // Calculate average performance across all children
         let averagePerformance = 0;
         if (resultsData && resultsData.length > 0) {
-          const totalPercentage = resultsData.reduce((sum, result) => {
-            const assessment = result.assessment as any;
-            const percentage = (result.marks_obtained / assessment.total_marks) * 100;
-            return sum + percentage;
-          }, 0);
-          averagePerformance = Math.round(totalPercentage / resultsData.length);
+          const validResults = resultsData.filter(r => r.assessment && (r.assessment as any).total_marks);
+          if (validResults.length > 0) {
+            const totalPercentage = validResults.reduce((sum, result) => {
+              const assessment = result.assessment as any;
+              const percentage = (result.marks_obtained / assessment.total_marks) * 100;
+              return sum + percentage;
+            }, 0);
+            averagePerformance = Math.round(totalPercentage / validResults.length);
+          }
         }
 
         // Get upcoming schedule events
@@ -426,12 +429,13 @@ const ParentDashboard = () => {
             }) || [];
 
             let avgGrade = 0;
-            if (childResults.length > 0) {
-              const total = childResults.reduce((sum, r) => {
+            const validChildResults = childResults.filter(r => r.assessment && (r.assessment as any).total_marks);
+            if (validChildResults.length > 0) {
+              const total = validChildResults.reduce((sum, r) => {
                 const assessment = r.assessment as any;
                 return sum + (r.marks_obtained / assessment.total_marks) * 100;
               }, 0);
-              avgGrade = Math.round(total / childResults.length);
+              avgGrade = Math.round(total / validChildResults.length);
             }
 
             const primaryClass = childLearnerRecords[0]?.class as any;
