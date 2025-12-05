@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
-import { Calendar, Clock, MapPin, Users, BookOpen, Bell } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, BookOpen, Bell, ArrowLeft } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { format, addDays, startOfWeek, isSameDay } from 'date-fns';
 
@@ -22,9 +23,12 @@ interface ScheduleItem {
 
 export default function Schedule() {
   const { profile, user, loading: authLoading } = useAuth();
+  const [searchParams] = useSearchParams();
+  const childUserId = searchParams.get('child');
   const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date()));
+  const [childName, setChildName] = useState<string>('');
 
   const daysOfWeek = [
     'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
@@ -34,11 +38,66 @@ export default function Schedule() {
     if (profile && user) {
       fetchSchedule();
     }
-  }, [profile, user]);
+  }, [profile, user, childUserId]);
 
   const fetchSchedule = async () => {
     try {
       setLoading(true);
+      
+      // If parent is viewing a specific child's schedule
+      if (profile?.role === 'parent' && childUserId) {
+        // Get child's name
+        const { data: childProfile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('user_id', childUserId)
+          .single();
+        
+        if (childProfile) setChildName(childProfile.full_name || 'Child');
+
+        // Get child's learner record
+        const { data: learnerData, error: learnerError } = await supabase
+          .from('learners')
+          .select('class_id')
+          .eq('user_id', childUserId)
+          .maybeSingle();
+
+        if (learnerError) throw learnerError;
+        if (!learnerData?.class_id) {
+          setSchedule([]);
+          return;
+        }
+        
+        const { data, error } = await supabase
+          .from('class_schedule')
+          .select(`
+            id,
+            day_of_week,
+            start_time,
+            end_time,
+            room,
+            subjects (name),
+            classes (name)
+          `)
+          .eq('class_id', learnerData.class_id)
+          .order('day_of_week')
+          .order('start_time');
+
+        if (error) throw error;
+        
+        const formattedData = data?.map(item => ({
+          id: item.id,
+          subject_name: item.subjects?.name || 'Unknown Subject',
+          class_name: item.classes?.name || 'Unknown Class',
+          day_of_week: item.day_of_week,
+          start_time: item.start_time,
+          end_time: item.end_time,
+          room: item.room
+        })) || [];
+        
+        setSchedule(formattedData);
+        return;
+      }
       
       if (profile?.role === 'teacher') {
         // Teachers see their teaching schedule
@@ -173,14 +232,23 @@ export default function Schedule() {
 
   return (
     <div className="animate-fade-in p-6 space-y-6">
+      {childUserId && profile?.role === 'parent' && (
+        <Button variant="ghost" className="mb-4" onClick={() => window.history.back()}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Children
+        </Button>
+      )}
+
       <div className="flex items-center gap-2 mb-6">
         <Calendar className="h-6 w-6 text-primary" />
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Schedule</h1>
+          <h1 className="text-2xl font-bold text-foreground">
+            {childUserId && childName ? `${childName}'s Schedule` : 'Schedule'}
+          </h1>
           <p className="text-muted-foreground">
             {profile?.role === 'teacher' 
               ? 'Your teaching schedule'
-              : 'Your class schedule'
+              : childUserId ? 'Class schedule' : 'Your class schedule'
             }
           </p>
         </div>

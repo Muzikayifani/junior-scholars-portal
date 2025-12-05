@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
-import { ClipboardList, Calendar, Clock, CheckCircle, AlertCircle, BookOpen } from 'lucide-react';
+import { ClipboardList, Calendar, Clock, CheckCircle, AlertCircle, BookOpen, ArrowLeft } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -30,22 +31,94 @@ interface Assignment {
 export default function Assignments() {
   const { profile, user, loading: authLoading } = useAuth();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const childUserId = searchParams.get('child');
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [childName, setChildName] = useState<string>('');
 
   useEffect(() => {
     if (profile && user) {
       fetchAssignments();
     }
-  }, [profile, user]);
+  }, [profile, user, childUserId]);
 
   const fetchAssignments = async () => {
     try {
       setLoading(true);
+      
+      // If parent is viewing a specific child's assignments
+      if (profile?.role === 'parent' && childUserId) {
+        // Get child's name
+        const { data: childProfile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('user_id', childUserId)
+          .single();
+        
+        if (childProfile) setChildName(childProfile.full_name || 'Child');
+
+        // Get child's learner record
+        const { data: learnerData, error: learnerError } = await supabase
+          .from('learners')
+          .select('id, class_id')
+          .eq('user_id', childUserId)
+          .maybeSingle();
+
+        if (learnerError) throw learnerError;
+        if (!learnerData?.class_id) {
+          setAssignments([]);
+          return;
+        }
+        
+        const { data, error } = await supabase
+          .from('assessments')
+          .select(`
+            id,
+            title,
+            description,
+            due_date,
+            total_marks,
+            type,
+            subjects (name),
+            classes (name),
+            results!results_assessment_id_fkey (
+              status,
+              marks_obtained,
+              submitted_at,
+              learner_id
+            )
+          `)
+          .eq('class_id', learnerData.class_id)
+          .eq('is_published', true)
+          .order('due_date', { ascending: true });
+
+        if (error) throw error;
+        
+        const formattedData = data?.map(item => {
+          const childResult = (item.results as any[])?.find(r => r.learner_id === learnerData.id);
+          return {
+            id: item.id,
+            title: item.title,
+            description: item.description,
+            due_date: item.due_date,
+            total_marks: item.total_marks,
+            type: item.type,
+            subject_name: item.subjects?.name,
+            class_name: item.classes?.name,
+            status: (childResult?.status as 'pending' | 'submitted' | 'graded') || 'pending',
+            marks_obtained: childResult?.marks_obtained,
+            submitted_at: childResult?.submitted_at
+          };
+        }) || [];
+        
+        setAssignments(formattedData);
+        return;
+      }
       
       if (profile?.role === 'teacher') {
         // Teachers see all assessments they've created
@@ -368,17 +441,24 @@ export default function Assignments() {
 
   return (
     <div className="animate-fade-in p-6 space-y-6">
+      {childUserId && profile?.role === 'parent' && (
+        <Button variant="ghost" className="mb-4" onClick={() => window.history.back()}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Children
+        </Button>
+      )}
+
       <div className="flex items-center gap-2 mb-6">
         <ClipboardList className="h-6 w-6 text-primary" />
         <div>
           <h1 className="text-2xl font-bold text-foreground">
-            {profile?.role === 'teacher' ? 'My Assessments' : 'Assignments'}
+            {profile?.role === 'teacher' ? 'My Assessments' : childUserId && childName ? `${childName}'s Assignments` : 'Assignments'}
           </h1>
           <p className="text-muted-foreground">
             {profile?.role === 'teacher' 
               ? 'Manage and track your assessments'
               : profile?.role === 'parent'
-              ? 'Track your children\'s assignments'
+              ? childUserId ? 'Track assignments and submissions' : 'Track your children\'s assignments'
               : 'Your assignments and submissions'
             }
           </p>
