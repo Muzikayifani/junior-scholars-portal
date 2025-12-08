@@ -1,5 +1,4 @@
-// @ts-nocheck
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
+import { MessageSquare, Send, Plus, ArrowLeft } from "lucide-react";
+import LoadingSpinner from "@/components/LoadingSpinner";
+import { format } from "date-fns";
 
 interface Thread {
   id: string;
@@ -18,74 +20,117 @@ interface Thread {
 interface Message {
   id: string;
   thread_id: string;
-  sender_profile_id: string;
+  sender_user_id: string;
   content: string;
   created_at: string;
 }
 
+interface Participant {
+  user_id: string;
+  full_name: string;
+}
+
 const Communication: React.FC = () => {
-  const { profile } = useAuth();
-  const { toast } = useToast();
+  const { profile, user } = useAuth();
   const [threads, setThreads] = useState<Thread[]>([]);
   const [activeThread, setActiveThread] = useState<Thread | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [participants, setParticipants] = useState<Participant[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [sendingMessage, setSendingMessage] = useState(false);
 
   // New conversation state
   const [openNew, setOpenNew] = useState(false);
   const [classes, setClasses] = useState<any[]>([]);
   const [learners, setLearners] = useState<any[]>([]);
+  const [children, setChildren] = useState<any[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>("");
   const [selectedLearner, setSelectedLearner] = useState<string>("");
+  const [selectedChild, setSelectedChild] = useState<string>("");
+  const [creatingThread, setCreatingThread] = useState(false);
+
   const isTeacher = profile?.role === "teacher";
   const isParent = profile?.role === "parent";
 
   useEffect(() => {
     if (!profile) return;
     loadThreads();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile]);
 
   const loadThreads = async () => {
-    const { data, error } = await supabase
-      .from("message_threads")
-      .select("id, subject, last_message_at")
-      .order("last_message_at", { ascending: false });
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("message_threads")
+        .select("id, subject, last_message_at")
+        .order("last_message_at", { ascending: false });
 
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-      return;
-    }
-    setThreads(data || []);
-    if (data && data.length && !activeThread) {
-      setActiveThread(data[0]);
-      loadMessages(data[0].id);
+      if (error) throw error;
+      
+      setThreads(data || []);
+      if (data && data.length > 0 && !activeThread) {
+        setActiveThread(data[0]);
+        loadMessages(data[0].id);
+        loadParticipants(data[0].id);
+      }
+    } catch (error: any) {
+      console.error("Error loading threads:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const loadMessages = async (threadId: string) => {
     const { data, error } = await supabase
       .from("messages")
-      .select("id, thread_id, sender_profile_id, content, created_at")
+      .select("id, thread_id, sender_user_id, content, created_at")
       .eq("thread_id", threadId)
       .order("created_at", { ascending: true });
 
     if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast.error("Failed to load messages");
       return;
     }
     setMessages(data || []);
   };
 
+  const loadParticipants = async (threadId: string) => {
+    const { data, error } = await supabase
+      .from("thread_participants")
+      .select("user_id")
+      .eq("thread_id", threadId);
+
+    if (error) return;
+
+    if (data && data.length > 0) {
+      const userIds = data.map(p => p.user_id);
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .in("user_id", userIds);
+
+      setParticipants(profiles?.map(p => ({ 
+        user_id: p.user_id, 
+        full_name: p.full_name || "Unknown" 
+      })) || []);
+    }
+  };
+
   // Realtime updates
   useEffect(() => {
     if (!activeThread) return;
+    
     const channel = supabase
-      .channel("schema-db-changes")
+      .channel(`messages-${activeThread.id}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages", filter: `thread_id=eq.${activeThread.id}` },
+        { 
+          event: "INSERT", 
+          schema: "public", 
+          table: "messages", 
+          filter: `thread_id=eq.${activeThread.id}` 
+        },
         (payload) => {
           setMessages((prev) => [...prev, payload.new as Message]);
         }
@@ -98,245 +143,464 @@ const Communication: React.FC = () => {
   }, [activeThread]);
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !activeThread || !profile) return;
-    setLoading(true);
+    if (!newMessage.trim() || !activeThread || !user) return;
+    setSendingMessage(true);
 
-    const { error } = await supabase.from("messages").insert({
-      thread_id: activeThread.id,
-      sender_profile_id: profile.id,
-      content: newMessage.trim(),
-    });
+    try {
+      const { error } = await supabase.from("messages").insert({
+        thread_id: activeThread.id,
+        sender_user_id: user.id,
+        content: newMessage.trim(),
+      });
 
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
+      if (error) throw error;
+      
       setNewMessage("");
       await loadThreads();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to send message");
+    } finally {
+      setSendingMessage(false);
     }
-    setLoading(false);
   };
 
-  // New conversation helpers
+  // Load teacher's classes
   useEffect(() => {
-    if (!profile) return;
-    if (isTeacher) {
-      supabase.from("classes").select("id, name, grade_level").then(({ data }) => setClasses(data || []));
-    } else if (isParent) {
-      // Parents don't need classes to start; they will pick one child
-      loadParentThreadsData();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isTeacher, isParent, profile]);
+    if (!profile || !isTeacher) return;
+    
+    supabase
+      .from("classes")
+      .select("id, name, grade_level")
+      .eq("teacher_id", profile.user_id)
+      .then(({ data }) => setClasses(data || []));
+  }, [isTeacher, profile]);
 
-  const loadParentThreadsData = async () => {
-    // noop for now; we will fetch child list when opening the composer
-  };
+  // Load parent's children
+  useEffect(() => {
+    if (!profile || !isParent) return;
+    
+    const loadChildren = async () => {
+      const { data: relationships } = await supabase
+        .from("parent_child_relationships")
+        .select("child_user_id")
+        .eq("parent_user_id", profile.user_id);
+
+      if (relationships && relationships.length > 0) {
+        const childIds = relationships.map(r => r.child_user_id);
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, full_name")
+          .in("user_id", childIds);
+        
+        setChildren(profiles || []);
+      }
+    };
+    
+    loadChildren();
+  }, [isParent, profile]);
+
+  // Load learners when class is selected
+  useEffect(() => {
+    if (!selectedClass) {
+      setLearners([]);
+      return;
+    }
+    
+    const loadLearners = async () => {
+      const { data } = await supabase
+        .from("learners")
+        .select("id, user_id")
+        .eq("class_id", selectedClass);
+
+      if (data && data.length > 0) {
+        const userIds = data.map(l => l.user_id);
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, full_name")
+          .in("user_id", userIds);
+
+        const learnersWithNames = data.map(l => ({
+          ...l,
+          full_name: profiles?.find(p => p.user_id === l.user_id)?.full_name || "Unknown"
+        }));
+        
+        setLearners(learnersWithNames);
+      }
+    };
+    
+    loadLearners();
+  }, [selectedClass]);
 
   const startTeacherConversation = async () => {
     if (!profile || !selectedLearner) return;
-    setLoading(true);
+    setCreatingThread(true);
+
     try {
-      // Find selected learner's parent
-      const { data: learner, error: learnerErr } = await supabase
-        .from("learners")
-        .select("id, parent_id")
-        .eq("id", selectedLearner)
-        .maybeSingle();
-      if (learnerErr) throw learnerErr;
-      if (!learner?.parent_id) throw new Error("Selected learner has no parent linked.");
+      // Find the learner's user_id
+      const learner = learners.find(l => l.id === selectedLearner);
+      if (!learner) throw new Error("Learner not found");
+
+      // Find parent linked to this learner
+      const { data: parentRelations, error: parentError } = await supabase
+        .from("parent_child_relationships")
+        .select("parent_user_id")
+        .eq("child_user_id", learner.user_id)
+        .limit(1);
+
+      if (parentError) throw parentError;
+      if (!parentRelations || parentRelations.length === 0) {
+        throw new Error("No parent linked to this student. Please link a parent first.");
+      }
+
+      const parentUserId = parentRelations[0].parent_user_id;
 
       // Create thread
       const { data: thread, error: threadErr } = await supabase
         .from("message_threads")
-        .insert({ subject: "Parent-Teacher Conversation" })
+        .insert({ subject: `Regarding: ${learner.full_name}` })
         .select("id, subject, last_message_at")
         .single();
+
       if (threadErr) throw threadErr;
 
-      // Add participants: teacher (self) and parent
-      const { error: partErr } = await supabase.from("thread_participants").insert([
-        { thread_id: thread!.id, profile_id: profile.id },
-        { thread_id: thread!.id, profile_id: learner.parent_id },
-      ]);
+      // Add participants
+      const { error: partErr } = await supabase
+        .from("thread_participants")
+        .insert([
+          { thread_id: thread.id, user_id: profile.user_id },
+          { thread_id: thread.id, user_id: parentUserId },
+        ]);
+
       if (partErr) throw partErr;
 
       setOpenNew(false);
       setSelectedClass("");
       setSelectedLearner("");
       await loadThreads();
-      setActiveThread(thread!);
-      await loadMessages(thread!.id);
+      setActiveThread(thread);
+      await loadMessages(thread.id);
+      await loadParticipants(thread.id);
 
-      toast({ title: "Conversation started" });
+      toast.success("Conversation started");
     } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
+      toast.error(e.message || "Failed to start conversation");
+    } finally {
+      setCreatingThread(false);
     }
-    setLoading(false);
   };
 
   const startParentConversation = async () => {
-    if (!profile) return;
-    setLoading(true);
+    if (!profile || !selectedChild) return;
+    setCreatingThread(true);
+
     try {
-      // Fetch children and allow selection on UI. For now, auto-pick first child and their teacher.
-      const { data: children, error: childrenErr } = await supabase
+      // Get the learner record for this child
+      const { data: learnerData, error: learnerError } = await supabase
         .from("learners")
         .select("id, class_id")
-        .eq("parent_id", profile.id);
-      if (childrenErr) throw childrenErr;
-      if (!children || !children.length) throw new Error("No linked children found.");
+        .eq("user_id", selectedChild)
+        .eq("status", "active")
+        .limit(1);
 
-      const child = children[0];
-      const { data: cls, error: clsErr } = await supabase
+      if (learnerError) throw learnerError;
+      if (!learnerData || learnerData.length === 0) {
+        throw new Error("Child is not enrolled in any class.");
+      }
+
+      // Get the teacher for this class
+      const { data: classData, error: classError } = await supabase
         .from("classes")
         .select("teacher_id")
-        .eq("id", child.class_id)
+        .eq("id", learnerData[0].class_id)
         .single();
-      if (clsErr) throw clsErr;
-      if (!cls?.teacher_id) throw new Error("Child's class has no teacher assigned.");
 
+      if (classError) throw classError;
+      if (!classData?.teacher_id) {
+        throw new Error("No teacher assigned to child's class.");
+      }
+
+      // Get child's name
+      const { data: childProfile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", selectedChild)
+        .single();
+
+      // Create thread
       const { data: thread, error: threadErr } = await supabase
         .from("message_threads")
-        .insert({ subject: "Parent-Teacher Conversation" })
+        .insert({ subject: `Regarding: ${childProfile?.full_name || "My Child"}` })
         .select("id, subject, last_message_at")
         .single();
+
       if (threadErr) throw threadErr;
 
-      const { error: partErr } = await supabase.from("thread_participants").insert([
-        { thread_id: thread!.id, profile_id: profile.id },
-        { thread_id: thread!.id, profile_id: cls.teacher_id },
-      ]);
+      // Add participants
+      const { error: partErr } = await supabase
+        .from("thread_participants")
+        .insert([
+          { thread_id: thread.id, user_id: profile.user_id },
+          { thread_id: thread.id, user_id: classData.teacher_id },
+        ]);
+
       if (partErr) throw partErr;
 
       setOpenNew(false);
+      setSelectedChild("");
       await loadThreads();
-      setActiveThread(thread!);
-      await loadMessages(thread!.id);
-      toast({ title: "Conversation started" });
+      setActiveThread(thread);
+      await loadMessages(thread.id);
+      await loadParticipants(thread.id);
+
+      toast.success("Conversation started with teacher");
     } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
+      toast.error(e.message || "Failed to start conversation");
+    } finally {
+      setCreatingThread(false);
     }
-    setLoading(false);
   };
 
-  // Load learners when class picked
-  useEffect(() => {
-    if (!selectedClass) { setLearners([]); return; }
-    supabase
-      .from("learners")
-      .select("id, 'Student FullName', profile:profiles(first_name, last_name)")
-      .eq("class_id", selectedClass)
-      .then(({ data }) => setLearners(data || []));
-  }, [selectedClass]);
+  const getSenderName = (senderId: string) => {
+    if (senderId === user?.id) return "You";
+    const participant = participants.find(p => p.user_id === senderId);
+    return participant?.full_name || "Unknown";
+  };
+
+  const getOtherParticipants = () => {
+    return participants
+      .filter(p => p.user_id !== user?.id)
+      .map(p => p.full_name)
+      .join(", ");
+  };
+
+  if (!isTeacher && !isParent) {
+    return (
+      <div className="p-6 animate-fade-in">
+        <Card className="glass-card">
+          <CardContent className="p-6">
+            <p className="text-muted-foreground">Communication is available for teachers and parents only.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <LoadingSpinner text="Loading messages..." />
+      </div>
+    );
+  }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-4">
-      {/* Threads list */}
-      <Card className="lg:col-span-1">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Conversations</CardTitle>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setOpenNew(true)}>New</Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {threads.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => { setActiveThread(t); loadMessages(t.id); }}
-                className={`w-full text-left rounded p-3 border transition ${activeThread?.id === t.id ? 'bg-accent' : 'hover:bg-accent/50'}`}
-              >
-                <div className="font-medium">{t.subject || 'Conversation'}</div>
-                <div className="text-xs text-muted-foreground">Last: {new Date(t.last_message_at).toLocaleString()}</div>
-              </button>
-            ))}
-            {threads.length === 0 && (
-              <div className="text-sm text-muted-foreground">No conversations yet.</div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+    <div className="p-6 space-y-6 animate-fade-in">
+      <div>
+        <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">Communication</h1>
+        <p className="text-muted-foreground">
+          {isTeacher ? "Message parents about their children" : "Contact your children's teachers"}
+        </p>
+      </div>
 
-      {/* Active chat */}
-      <Card className="lg:col-span-2 flex flex-col">
-        <CardHeader>
-          <CardTitle>{activeThread?.subject || 'Select a conversation'}</CardTitle>
-        </CardHeader>
-        <CardContent className="flex-1 flex flex-col gap-4 max-h-[70vh] overflow-y-auto">
-          {messages.map((m) => (
-            <div key={m.id} className={`max-w-[80%] rounded p-3 ${m.sender_profile_id === profile?.id ? 'ml-auto bg-primary text-primary-foreground' : 'bg-muted'}`}>
-              <div className="text-sm whitespace-pre-wrap">{m.content}</div>
-              <div className="text-[10px] opacity-70 mt-1">{new Date(m.created_at).toLocaleString()}</div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Threads list */}
+        <Card className="glass-card lg:col-span-1">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <MessageSquare className="h-5 w-5 text-primary" />
+              Conversations
+            </CardTitle>
+            <Button size="sm" onClick={() => setOpenNew(true)}>
+              <Plus className="h-4 w-4 mr-1" />
+              New
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 max-h-[500px] overflow-y-auto">
+              {threads.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => {
+                    setActiveThread(t);
+                    loadMessages(t.id);
+                    loadParticipants(t.id);
+                  }}
+                  className={`w-full text-left rounded-lg p-3 border transition-colors ${
+                    activeThread?.id === t.id 
+                      ? 'bg-primary/10 border-primary' 
+                      : 'hover:bg-muted/50 border-transparent'
+                  }`}
+                >
+                  <div className="font-medium truncate">{t.subject || 'Conversation'}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {format(new Date(t.last_message_at), "MMM d, h:mm a")}
+                  </div>
+                </button>
+              ))}
+              {threads.length === 0 && (
+                <div className="text-sm text-muted-foreground text-center py-8">
+                  <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                  <p>No conversations yet</p>
+                  <p className="text-xs mt-1">Start a new conversation</p>
+                </div>
+              )}
             </div>
-          ))}
-          {activeThread && messages.length === 0 && (
-            <div className="text-sm text-muted-foreground">No messages yet. Say hello!</div>
-          )}
-        </CardContent>
-        {activeThread && (
-          <div className="flex gap-2 p-4 pt-0">
-            <Input
-              placeholder="Type a message"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') sendMessage(); }}
-            />
-            <Button onClick={sendMessage} disabled={loading || !newMessage.trim()}>Send</Button>
-          </div>
-        )}
-      </Card>
+          </CardContent>
+        </Card>
 
-      {/* New conversation modal - simple inline */}
-      {openNew && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-background rounded-lg p-6 w-full max-w-lg shadow-lg">
-            <div className="text-lg font-semibold mb-4">Start a new conversation</div>
-            {isTeacher ? (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Class</Label>
-                  <Select value={selectedClass} onValueChange={setSelectedClass}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select class" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {classes.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>{c.name} (Grade {c.grade_level})</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+        {/* Active chat */}
+        <Card className="glass-card lg:col-span-2 flex flex-col min-h-[600px]">
+          <CardHeader className="pb-2 border-b">
+            <CardTitle className="text-lg">
+              {activeThread ? (
+                <div>
+                  <div>{activeThread.subject || 'Conversation'}</div>
+                  <div className="text-sm font-normal text-muted-foreground">
+                    with {getOtherParticipants() || "..."}
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Learner</Label>
-                  <Select value={selectedLearner} onValueChange={setSelectedLearner}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select learner" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {learners.map((l) => (
-                        <SelectItem key={l.id} value={l.id}>
-                          {l["Student FullName"] || `${l.profile?.first_name} ${l.profile?.last_name}`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              ) : (
+                'Select a conversation'
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex-1 flex flex-col p-4">
+            <div className="flex-1 overflow-y-auto space-y-3 mb-4 max-h-[400px]">
+              {messages.map((m) => (
+                <div 
+                  key={m.id} 
+                  className={`max-w-[80%] rounded-lg p-3 ${
+                    m.sender_user_id === user?.id 
+                      ? 'ml-auto bg-primary text-primary-foreground' 
+                      : 'bg-muted'
+                  }`}
+                >
+                  <div className="text-xs opacity-70 mb-1">
+                    {getSenderName(m.sender_user_id)}
+                  </div>
+                  <div className="text-sm whitespace-pre-wrap">{m.content}</div>
+                  <div className="text-[10px] opacity-70 mt-1">
+                    {format(new Date(m.created_at), "h:mm a")}
+                  </div>
                 </div>
-                <div className="flex gap-2 justify-end">
-                  <Button variant="outline" onClick={() => setOpenNew(false)}>Cancel</Button>
-                  <Button onClick={startTeacherConversation} disabled={!selectedLearner || loading}>Start</Button>
+              ))}
+              {activeThread && messages.length === 0 && (
+                <div className="text-sm text-muted-foreground text-center py-8">
+                  No messages yet. Say hello!
                 </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">We'll start a chat with your child's class teacher.</p>
-                <div className="flex gap-2 justify-end">
-                  <Button variant="outline" onClick={() => setOpenNew(false)}>Cancel</Button>
-                  <Button onClick={startParentConversation} disabled={loading}>Start</Button>
+              )}
+              {!activeThread && (
+                <div className="text-sm text-muted-foreground text-center py-8">
+                  Select a conversation to view messages
                 </div>
+              )}
+            </div>
+            
+            {activeThread && (
+              <div className="flex gap-2 pt-2 border-t">
+                <Input
+                  placeholder="Type a message..."
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) sendMessage(); }}
+                  disabled={sendingMessage}
+                />
+                <Button 
+                  onClick={sendMessage} 
+                  disabled={sendingMessage || !newMessage.trim()}
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
               </div>
             )}
-          </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* New conversation dialog */}
+      {openNew && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <Card className="w-full max-w-md mx-4 glass-card">
+            <CardHeader>
+              <CardTitle>Start New Conversation</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {isTeacher ? (
+                <>
+                  <div className="space-y-2">
+                    <Label>Select Class</Label>
+                    <Select value={selectedClass} onValueChange={setSelectedClass}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a class" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {classes.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.name} (Grade {c.grade_level})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Select Student</Label>
+                    <Select 
+                      value={selectedLearner} 
+                      onValueChange={setSelectedLearner}
+                      disabled={!selectedClass}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a student" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {learners.map((l) => (
+                          <SelectItem key={l.id} value={l.id}>
+                            {l.full_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    A conversation will be started with the student's linked parent.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <Label>Select Child</Label>
+                    <Select value={selectedChild} onValueChange={setSelectedChild}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose your child" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {children.map((c) => (
+                          <SelectItem key={c.user_id} value={c.user_id}>
+                            {c.full_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    A conversation will be started with your child's class teacher.
+                  </p>
+                </>
+              )}
+              
+              <div className="flex gap-2 justify-end pt-4">
+                <Button variant="outline" onClick={() => setOpenNew(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={isTeacher ? startTeacherConversation : startParentConversation}
+                  disabled={creatingThread || (isTeacher ? !selectedLearner : !selectedChild)}
+                >
+                  {creatingThread ? "Creating..." : "Start Conversation"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>
