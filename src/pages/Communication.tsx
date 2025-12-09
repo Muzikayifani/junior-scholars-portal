@@ -49,6 +49,7 @@ const Communication: React.FC = () => {
   const [selectedLearner, setSelectedLearner] = useState<string>("");
   const [selectedChild, setSelectedChild] = useState<string>("");
   const [creatingThread, setCreatingThread] = useState(false);
+  const [messageTarget, setMessageTarget] = useState<"parent" | "learner">("parent");
 
   const isTeacher = profile?.role === "teacher";
   const isParent = profile?.role === "parent";
@@ -240,24 +241,34 @@ const Communication: React.FC = () => {
       const learner = learners.find(l => l.id === selectedLearner);
       if (!learner) throw new Error("Learner not found");
 
-      // Find parent linked to this learner
-      const { data: parentRelations, error: parentError } = await supabase
-        .from("parent_child_relationships")
-        .select("parent_user_id")
-        .eq("child_user_id", learner.user_id)
-        .limit(1);
+      let targetUserId: string;
+      let threadSubject: string;
 
-      if (parentError) throw parentError;
-      if (!parentRelations || parentRelations.length === 0) {
-        throw new Error("No parent linked to this student. Please link a parent first.");
+      if (messageTarget === "parent") {
+        // Find parent linked to this learner
+        const { data: parentRelations, error: parentError } = await supabase
+          .from("parent_child_relationships")
+          .select("parent_user_id")
+          .eq("child_user_id", learner.user_id)
+          .limit(1);
+
+        if (parentError) throw parentError;
+        if (!parentRelations || parentRelations.length === 0) {
+          throw new Error("No parent linked to this student. Please link a parent first, or message the learner directly.");
+        }
+
+        targetUserId = parentRelations[0].parent_user_id;
+        threadSubject = `Parent of ${learner.full_name}`;
+      } else {
+        // Message learner directly
+        targetUserId = learner.user_id;
+        threadSubject = `Message to ${learner.full_name}`;
       }
-
-      const parentUserId = parentRelations[0].parent_user_id;
 
       // Create thread
       const { data: thread, error: threadErr } = await supabase
         .from("message_threads")
-        .insert({ subject: `Regarding: ${learner.full_name}` })
+        .insert({ subject: threadSubject })
         .select("id, subject, last_message_at")
         .single();
 
@@ -268,7 +279,7 @@ const Communication: React.FC = () => {
         .from("thread_participants")
         .insert([
           { thread_id: thread.id, user_id: profile.user_id },
-          { thread_id: thread.id, user_id: parentUserId },
+          { thread_id: thread.id, user_id: targetUserId },
         ]);
 
       if (partErr) throw partErr;
@@ -276,12 +287,13 @@ const Communication: React.FC = () => {
       setOpenNew(false);
       setSelectedClass("");
       setSelectedLearner("");
+      setMessageTarget("parent");
       await loadThreads();
       setActiveThread(thread);
       await loadMessages(thread.id);
       await loadParticipants(thread.id);
 
-      toast.success("Conversation started");
+      toast.success(messageTarget === "parent" ? "Conversation started with parent" : "Conversation started with learner");
     } catch (e: any) {
       toast.error(e.message || "Failed to start conversation");
     } finally {
@@ -561,8 +573,22 @@ const Communication: React.FC = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="space-y-2">
+                    <Label>Message To</Label>
+                    <Select value={messageTarget} onValueChange={(v) => setMessageTarget(v as "parent" | "learner")}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="parent">Parent/Guardian</SelectItem>
+                        <SelectItem value="learner">Student Directly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <p className="text-xs text-muted-foreground">
-                    A conversation will be started with the student's linked parent.
+                    {messageTarget === "parent" 
+                      ? "A conversation will be started with the student's linked parent." 
+                      : "A conversation will be started directly with the student."}
                   </p>
                 </>
               ) : (
