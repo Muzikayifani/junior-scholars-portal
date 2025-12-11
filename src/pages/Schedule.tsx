@@ -6,9 +6,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
-import { Calendar, Clock, MapPin, Users, BookOpen, Bell, ArrowLeft } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, BookOpen, Bell, ArrowLeft, Download, CalendarPlus } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { format, addDays, startOfWeek, isSameDay } from 'date-fns';
+import { generateScheduleICS, downloadICSFile } from '@/lib/calendarExport';
+import { toast } from 'sonner';
 
 interface ScheduleItem {
   id: string;
@@ -239,19 +241,47 @@ export default function Schedule() {
         </Button>
       )}
 
-      <div className="flex items-center gap-2 mb-6">
-        <Calendar className="h-6 w-6 text-primary" />
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            {childUserId && childName ? `${childName}'s Schedule` : 'Schedule'}
-          </h1>
-          <p className="text-muted-foreground">
-            {profile?.role === 'teacher' 
-              ? 'Your teaching schedule'
-              : childUserId ? 'Class schedule' : 'Your class schedule'
-            }
-          </p>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-2">
+          <Calendar className="h-6 w-6 text-primary" />
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">
+              {childUserId && childName ? `${childName}'s Schedule` : 'Schedule'}
+            </h1>
+            <p className="text-muted-foreground">
+              {profile?.role === 'teacher' 
+                ? 'Your teaching schedule'
+                : childUserId ? 'Class schedule' : 'Your class schedule'
+              }
+            </p>
+          </div>
         </div>
+        
+        {schedule.length > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const icsContent = generateScheduleICS(
+                schedule.map(s => ({
+                  id: s.id,
+                  dayOfWeek: s.day_of_week,
+                  startTime: s.start_time,
+                  endTime: s.end_time,
+                  subjectName: s.subject_name,
+                  className: s.class_name,
+                  room: s.room,
+                }))
+              );
+              downloadICSFile(icsContent, 'class-schedule.ics');
+              toast.success('Schedule exported to calendar file');
+            }}
+            className="flex items-center gap-2"
+          >
+            <CalendarPlus className="h-4 w-4" />
+            Export to Calendar
+          </Button>
+        )}
       </div>
 
       {schedule.length === 0 ? (

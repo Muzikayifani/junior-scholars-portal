@@ -4,6 +4,8 @@ import { AppSidebar } from '@/components/AppSidebar';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { LogOut, User } from 'lucide-react';
+import { NotificationCenter } from '@/components/NotificationCenter';
+import { GlobalSearch } from '@/components/GlobalSearch';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -35,10 +37,15 @@ const Layout = ({ children }: LayoutProps) => {
         <div className="flex-1 flex flex-col">
           <header className="h-16 border-b glass-card sticky top-0 z-40 animate-slide-up">
             <div className="flex items-center justify-between h-full px-4">
-              <SidebarTrigger className="transition-all duration-200 hover:scale-110" />
+              <div className="flex items-center gap-2">
+                <SidebarTrigger className="transition-all duration-200 hover:scale-110" />
+                <GlobalSearch />
+              </div>
               
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 text-sm p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-all duration-200">
+              <div className="flex items-center gap-2">
+                <NotificationCenter />
+                
+                <div className="hidden sm:flex items-center gap-2 text-sm p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-all duration-200">
                   <div className="p-1 rounded-full bg-primary/10">
                     <User className="h-3 w-3 text-primary" />
                   </div>
@@ -57,7 +64,7 @@ const Layout = ({ children }: LayoutProps) => {
                   className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200 hover:scale-105"
                 >
                   <LogOut className="h-4 w-4" />
-                  Sign Out
+                  <span className="hidden sm:inline ml-1">Sign Out</span>
                 </Button>
               </div>
             </div>
