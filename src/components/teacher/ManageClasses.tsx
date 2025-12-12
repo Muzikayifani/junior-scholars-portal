@@ -73,7 +73,7 @@ const ManageClasses = () => {
       .select(`
         *,
         profiles!fk_classes_teacher_id(full_name),
-        learners(id),
+        learners(id, user_id),
         class_subjects(
           subjects(id, name)
         )
@@ -110,15 +110,14 @@ const ManageClasses = () => {
       .eq('role', 'learner');
 
     if (!error && data) {
-      // Filter out students already enrolled in classes
-      const { data: enrolledStudents } = await supabase
-        .from('learners')
-        .select('user_id');
-      
-      const enrolledUserIds = enrolledStudents?.map(s => s.user_id) || [];
-      const available = data.filter(student => !enrolledUserIds.includes(student.user_id));
-      setAvailableStudents(available);
+      setAvailableStudents(data);
     }
+  };
+
+  const getStudentsNotInClass = (classId: string) => {
+    const classData = classes.find(c => c.id === classId);
+    const enrolledUserIds = classData?.learners?.map((l: any) => l.user_id) || [];
+    return availableStudents.filter(student => !enrolledUserIds.includes(student.user_id));
   };
 
   const loadGrades = async () => {
@@ -596,21 +595,30 @@ const ManageClasses = () => {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Select Student</Label>
-              <Select value={selectedStudent} onValueChange={setSelectedStudent}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a student" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableStudents.map((student) => (
-                    <SelectItem key={student.user_id} value={student.user_id}>
-                      {student.full_name} ({student.email})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {selectedClass && getStudentsNotInClass(selectedClass.id).length === 0 ? (
+                <p className="text-sm text-muted-foreground py-2">
+                  All existing students are already enrolled in this class.
+                </p>
+              ) : (
+                <Select value={selectedStudent} onValueChange={setSelectedStudent}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a student" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background">
+                    {selectedClass && getStudentsNotInClass(selectedClass.id).map((student) => (
+                      <SelectItem key={student.user_id} value={student.user_id}>
+                        {student.full_name} ({student.email})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             <div className="flex gap-2">
-              <Button onClick={handleEnrollStudent} disabled={loading || !selectedStudent}>
+              <Button 
+                onClick={handleEnrollStudent} 
+                disabled={loading || !selectedStudent || (selectedClass && getStudentsNotInClass(selectedClass.id).length === 0)}
+              >
                 {loading ? "Enrolling..." : "Enroll Student"}
               </Button>
               <Button 
