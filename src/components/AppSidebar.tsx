@@ -11,6 +11,7 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/useAuth';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import {
   Home,
   BookOpen,
@@ -21,8 +22,10 @@ import {
   Calendar,
   BarChart3,
   Settings,
-  GraduationCap
+  GraduationCap,
+  MessageSquare
 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 const getLearnerMenuItems = () => [
   { title: "Dashboard", url: "/dashboard", icon: Home },
@@ -30,6 +33,7 @@ const getLearnerMenuItems = () => [
   { title: "Assignments", url: "/assignments", icon: ClipboardList },
   { title: "Results", url: "/results", icon: Award },
   { title: "Schedule", url: "/schedule", icon: Calendar },
+  { title: "Messages", url: "/communication", icon: MessageSquare },
 ];
 
 const getParentMenuItems = () => [
@@ -55,6 +59,7 @@ export function AppSidebar() {
   const { profile } = useAuth();
   const location = useLocation();
   const currentPath = location.pathname;
+  const { unreadCount } = useUnreadMessages();
 
   const getMenuItems = () => {
     switch (profile?.role) {
@@ -96,7 +101,12 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink to={item.url} end className={getNavClassName}>
                       <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
+                      <span className="flex-1">{item.title}</span>
+                      {(item.url === '/communication') && unreadCount > 0 && (
+                        <Badge variant="destructive" className="ml-auto h-5 min-w-5 px-1.5 text-xs">
+                          {unreadCount > 99 ? '99+' : unreadCount}
+                        </Badge>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
