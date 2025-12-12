@@ -11,8 +11,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { BookOpen, Edit, Trash2, Plus, Users, GraduationCap, UserPlus, UserMinus } from 'lucide-react';
+import { BookOpen, Edit, Trash2, Plus, Users, GraduationCap, UserPlus, UserMinus, Eye, Calendar, Mail, Phone, User } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { format } from 'date-fns';
 
 interface ClassData {
   id: string;
@@ -42,6 +43,8 @@ const ManageClasses = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showSubjectDialog, setShowSubjectDialog] = useState(false);
   const [showStudentDialog, setShowStudentDialog] = useState(false);
+  const [showStudentDetails, setShowStudentDetails] = useState(false);
+  const [selectedStudentDetails, setSelectedStudentDetails] = useState<any>(null);
   const [selectedClass, setSelectedClass] = useState<ClassData | null>(null);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<string>('');
@@ -74,7 +77,7 @@ const ManageClasses = () => {
       .select(`
         *,
         profiles!fk_classes_teacher_id(full_name),
-        learners(id, user_id, profiles!fk_learners_user_id(full_name, email)),
+        learners(id, user_id, enrollment_date, status, student_number, profiles!fk_learners_user_id(full_name, email, phone, date_of_birth)),
         class_subjects(
           subjects(id, name)
         )
@@ -630,19 +633,38 @@ const ManageClasses = () => {
                 <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
                   {selectedClass.learners.map((learner: any) => (
                     <div key={learner.id} className="flex items-center justify-between p-2 bg-muted/50 rounded">
-                      <div className="text-sm">
+                      <button
+                        className="text-sm text-left flex-1 hover:bg-muted/80 rounded p-1 -m-1 transition-colors cursor-pointer"
+                        onClick={() => {
+                          setSelectedStudentDetails(learner);
+                          setShowStudentDetails(true);
+                        }}
+                      >
                         <p className="font-medium">{learner.profiles?.full_name || 'Unknown'}</p>
                         <p className="text-muted-foreground text-xs">{learner.profiles?.email}</p>
+                      </button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedStudentDetails(learner);
+                            setShowStudentDetails(true);
+                          }}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveStudent(learner.id, learner.profiles?.full_name || 'this student')}
+                          disabled={loading}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <UserMinus className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveStudent(learner.id, learner.profiles?.full_name || 'this student')}
-                        disabled={loading}
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      >
-                        <UserMinus className="h-4 w-4" />
-                      </Button>
                     </div>
                   ))}
                 </div>
@@ -690,6 +712,95 @@ const ManageClasses = () => {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Student Details Dialog */}
+      <Dialog open={showStudentDetails} onOpenChange={setShowStudentDetails}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Student Details
+            </DialogTitle>
+          </DialogHeader>
+          {selectedStudentDetails && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <User className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold">
+                    {selectedStudentDetails.profiles?.full_name || 'Unknown'}
+                  </h3>
+                  {selectedStudentDetails.student_number && (
+                    <p className="text-sm text-muted-foreground">
+                      Student #{selectedStudentDetails.student_number}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Email</p>
+                    <p className="text-sm">{selectedStudentDetails.profiles?.email || 'Not provided'}</p>
+                  </div>
+                </div>
+
+                {selectedStudentDetails.profiles?.phone && (
+                  <div className="flex items-center gap-3">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Phone</p>
+                      <p className="text-sm">{selectedStudentDetails.profiles.phone}</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-3">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Enrollment Date</p>
+                    <p className="text-sm">
+                      {selectedStudentDetails.enrollment_date 
+                        ? format(new Date(selectedStudentDetails.enrollment_date), 'MMMM d, yyyy')
+                        : 'Not recorded'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Class</p>
+                    <p className="text-sm">{selectedClass?.name} (Grade {selectedClass?.grade_level})</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Status</p>
+                    <Badge variant={selectedStudentDetails.status === 'active' ? 'default' : 'secondary'}>
+                      {selectedStudentDetails.status || 'Active'}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <Button variant="outline" onClick={() => setShowStudentDetails(false)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
