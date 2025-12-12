@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { BookOpen, Edit, Trash2, Plus, Users, GraduationCap, UserPlus } from 'lucide-react';
+import { BookOpen, Edit, Trash2, Plus, Users, GraduationCap, UserPlus, UserMinus } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 interface ClassData {
   id: string;
@@ -73,7 +74,7 @@ const ManageClasses = () => {
       .select(`
         *,
         profiles!fk_classes_teacher_id(full_name),
-        learners(id, user_id),
+        learners(id, user_id, profiles!fk_learners_user_id(full_name, email)),
         class_subjects(
           subjects(id, name)
         )
@@ -262,6 +263,32 @@ const ManageClasses = () => {
       });
       setShowStudentDialog(false);
       setSelectedStudent('');
+      loadData();
+    }
+    setLoading(false);
+  };
+
+  const handleRemoveStudent = async (learnerId: string, studentName: string) => {
+    if (!confirm(`Are you sure you want to remove ${studentName} from this class?`)) return;
+
+    setLoading(true);
+    
+    const { error } = await supabase
+      .from('learners')
+      .delete()
+      .eq('id', learnerId);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: `${studentName} removed from class.`,
+      });
       loadData();
     }
     setLoading(false);
@@ -588,13 +615,47 @@ const ManageClasses = () => {
 
       {/* Enroll Student Dialog */}
       <Dialog open={showStudentDialog} onOpenChange={setShowStudentDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Enroll Student in {selectedClass?.name}</DialogTitle>
+            <DialogTitle>Manage Students in {selectedClass?.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {/* Enrolled Students Section */}
+            {selectedClass?.learners && selectedClass.learners.length > 0 && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Enrolled Students ({selectedClass.learners.length})
+                </Label>
+                <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
+                  {selectedClass.learners.map((learner: any) => (
+                    <div key={learner.id} className="flex items-center justify-between p-2 bg-muted/50 rounded">
+                      <div className="text-sm">
+                        <p className="font-medium">{learner.profiles?.full_name || 'Unknown'}</p>
+                        <p className="text-muted-foreground text-xs">{learner.profiles?.email}</p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveStudent(learner.id, learner.profiles?.full_name || 'this student')}
+                        disabled={loading}
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      >
+                        <UserMinus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {selectedClass?.learners && selectedClass.learners.length > 0 && (
+              <Separator />
+            )}
+
+            {/* Add New Student Section */}
             <div className="space-y-2">
-              <Label>Select Student</Label>
+              <Label>Add Student</Label>
               {selectedClass && getStudentsNotInClass(selectedClass.id).length === 0 ? (
                 <p className="text-sm text-muted-foreground py-2">
                   All existing students are already enrolled in this class.
@@ -602,7 +663,7 @@ const ManageClasses = () => {
               ) : (
                 <Select value={selectedStudent} onValueChange={setSelectedStudent}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Choose a student" />
+                    <SelectValue placeholder="Choose a student to add" />
                   </SelectTrigger>
                   <SelectContent className="bg-background">
                     {selectedClass && getStudentsNotInClass(selectedClass.id).map((student) => (
@@ -619,13 +680,13 @@ const ManageClasses = () => {
                 onClick={handleEnrollStudent} 
                 disabled={loading || !selectedStudent || (selectedClass && getStudentsNotInClass(selectedClass.id).length === 0)}
               >
-                {loading ? "Enrolling..." : "Enroll Student"}
+                {loading ? "Adding..." : "Add Student"}
               </Button>
               <Button 
                 variant="outline" 
                 onClick={() => setShowStudentDialog(false)}
               >
-                Cancel
+                Close
               </Button>
             </div>
           </div>
