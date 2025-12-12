@@ -45,14 +45,17 @@ const Communication: React.FC = () => {
   const [classes, setClasses] = useState<any[]>([]);
   const [learners, setLearners] = useState<any[]>([]);
   const [children, setChildren] = useState<any[]>([]);
+  const [teachers, setTeachers] = useState<any[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>("");
   const [selectedLearner, setSelectedLearner] = useState<string>("");
   const [selectedChild, setSelectedChild] = useState<string>("");
+  const [selectedTeacher, setSelectedTeacher] = useState<string>("");
   const [creatingThread, setCreatingThread] = useState(false);
   const [messageTarget, setMessageTarget] = useState<"parent" | "learner">("parent");
 
   const isTeacher = profile?.role === "teacher";
   const isParent = profile?.role === "parent";
+  const isLearner = profile?.role === "learner";
 
   useEffect(() => {
     if (!profile) return;
@@ -199,6 +202,48 @@ const Communication: React.FC = () => {
     
     loadChildren();
   }, [isParent, profile]);
+
+  // Load learner's teachers
+  useEffect(() => {
+    if (!profile || !isLearner) return;
+    
+    const loadTeachers = async () => {
+      // Get learner's class(es)
+      const { data: learnerData } = await supabase
+        .from("learners")
+        .select("class_id")
+        .eq("user_id", profile.user_id)
+        .eq("status", "active");
+
+      if (learnerData && learnerData.length > 0) {
+        const classIds = learnerData.map(l => l.class_id);
+        
+        // Get teachers for these classes
+        const { data: classData } = await supabase
+          .from("classes")
+          .select("id, name, teacher_id")
+          .in("id", classIds);
+
+        if (classData && classData.length > 0) {
+          const teacherIds = [...new Set(classData.map(c => c.teacher_id).filter(Boolean))];
+          
+          const { data: teacherProfiles } = await supabase
+            .from("profiles")
+            .select("user_id, full_name")
+            .in("user_id", teacherIds);
+
+          const teachersWithClasses = teacherProfiles?.map(t => ({
+            ...t,
+            className: classData.find(c => c.teacher_id === t.user_id)?.name || "Unknown Class"
+          })) || [];
+          
+          setTeachers(teachersWithClasses);
+        }
+      }
+    };
+    
+    loadTeachers();
+  }, [isLearner, profile]);
 
   // Load learners when class is selected
   useEffect(() => {
@@ -372,6 +417,52 @@ const Communication: React.FC = () => {
     }
   };
 
+  const startLearnerConversation = async () => {
+    if (!profile || !selectedTeacher) return;
+    setCreatingThread(true);
+
+    try {
+      // Get teacher's name
+      const { data: teacherProfile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", selectedTeacher)
+        .single();
+
+      // Create thread
+      const { data: thread, error: threadErr } = await supabase
+        .from("message_threads")
+        .insert({ subject: `Message to ${teacherProfile?.full_name || "Teacher"}` })
+        .select("id, subject, last_message_at")
+        .single();
+
+      if (threadErr) throw threadErr;
+
+      // Add participants
+      const { error: partErr } = await supabase
+        .from("thread_participants")
+        .insert([
+          { thread_id: thread.id, user_id: profile.user_id },
+          { thread_id: thread.id, user_id: selectedTeacher },
+        ]);
+
+      if (partErr) throw partErr;
+
+      setOpenNew(false);
+      setSelectedTeacher("");
+      await loadThreads();
+      setActiveThread(thread);
+      await loadMessages(thread.id);
+      await loadParticipants(thread.id);
+
+      toast.success("Conversation started with teacher");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to start conversation");
+    } finally {
+      setCreatingThread(false);
+    }
+  };
+
   const getSenderName = (senderId: string) => {
     if (senderId === user?.id) return "You";
     const participant = participants.find(p => p.user_id === senderId);
@@ -385,17 +476,7 @@ const Communication: React.FC = () => {
       .join(", ");
   };
 
-  if (!isTeacher && !isParent) {
-    return (
-      <div className="p-6 animate-fade-in">
-        <Card className="glass-card">
-          <CardContent className="p-6">
-            <p className="text-muted-foreground">Communication is available for teachers and parents only.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // All roles can now access communication
 
   if (loading) {
     return (
@@ -408,9 +489,15 @@ const Communication: React.FC = () => {
   return (
     <div className="p-6 space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">Communication</h1>
+        <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+          {isLearner ? "Messages" : "Communication"}
+        </h1>
         <p className="text-muted-foreground">
-          {isTeacher ? "Message parents about their children" : "Contact your children's teachers"}
+          {isTeacher 
+            ? "Message parents and students" 
+            : isParent 
+              ? "Contact your children's teachers" 
+              : "Message your teachers"}
         </p>
       </div>
 
@@ -591,7 +678,7 @@ const Communication: React.FC = () => {
                       : "A conversation will be started directly with the student."}
                   </p>
                 </>
-              ) : (
+              ) : isParent ? (
                 <>
                   <div className="space-y-2">
                     <Label>Select Child</Label>
@@ -612,6 +699,32 @@ const Communication: React.FC = () => {
                     A conversation will be started with your child's class teacher.
                   </p>
                 </>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <Label>Select Teacher</Label>
+                    <Select value={selectedTeacher} onValueChange={setSelectedTeacher}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a teacher" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {teachers.map((t: any) => (
+                          <SelectItem key={t.user_id} value={t.user_id}>
+                            {t.full_name} ({t.className})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    A conversation will be started with your teacher.
+                  </p>
+                  {teachers.length === 0 && (
+                    <p className="text-xs text-amber-600">
+                      No teachers found. Make sure you are enrolled in a class.
+                    </p>
+                  )}
+                </>
               )}
               
               <div className="flex gap-2 justify-end pt-4">
@@ -619,8 +732,17 @@ const Communication: React.FC = () => {
                   Cancel
                 </Button>
                 <Button 
-                  onClick={isTeacher ? startTeacherConversation : startParentConversation}
-                  disabled={creatingThread || (isTeacher ? !selectedLearner : !selectedChild)}
+                  onClick={
+                    isTeacher 
+                      ? startTeacherConversation 
+                      : isParent 
+                        ? startParentConversation 
+                        : startLearnerConversation
+                  }
+                  disabled={
+                    creatingThread || 
+                    (isTeacher ? !selectedLearner : isParent ? !selectedChild : !selectedTeacher)
+                  }
                 >
                   {creatingThread ? "Creating..." : "Start Conversation"}
                 </Button>
