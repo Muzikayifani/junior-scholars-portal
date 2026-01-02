@@ -12,14 +12,17 @@ import {
   Clock,
   CheckCircle
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { PullToRefresh } from '@/components/PullToRefresh';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const LearnerDashboard = () => {
   const { profile } = useAuth();
+  const isMobile = useIsMobile();
   const [stats, setStats] = useState({
     activeClasses: 0,
     pendingAssignments: 0,
@@ -30,10 +33,8 @@ const LearnerDashboard = () => {
   const [recentGrades, setRecentGrades] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchLearnerData = useCallback(async () => {
     if (!profile?.user_id) return;
-
-    const fetchLearnerData = async () => {
       setLoading(true);
       try {
         // Fetch enrolled classes
@@ -157,12 +158,18 @@ const LearnerDashboard = () => {
         console.error('Error fetching learner data:', error);
         toast.error('Failed to load dashboard data');
       } finally {
-        setLoading(false);
-      }
-    };
+      setLoading(false);
+    }
+  }, [profile?.user_id]);
 
+  useEffect(() => {
     fetchLearnerData();
-  }, [profile]);
+  }, [fetchLearnerData]);
+
+  const handleRefresh = useCallback(async () => {
+    await fetchLearnerData();
+    toast.success('Dashboard refreshed');
+  }, [fetchLearnerData]);
 
   if (loading) {
     return (
@@ -172,7 +179,7 @@ const LearnerDashboard = () => {
     );
   }
 
-  return (
+  const content = (
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
       <div className="animate-slide-up">
         <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">Welcome Back!</h1>
@@ -295,10 +302,17 @@ const LearnerDashboard = () => {
       </div>
     </div>
   );
+
+  if (isMobile) {
+    return <PullToRefresh onRefresh={handleRefresh}>{content}</PullToRefresh>;
+  }
+
+  return content;
 };
 
 const ParentDashboard = () => {
   const { profile } = useAuth();
+  const isMobile = useIsMobile();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     childrenCount: 0,
@@ -309,11 +323,9 @@ const ParentDashboard = () => {
   const [childrenData, setChildrenData] = useState<any[]>([]);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
 
-  useEffect(() => {
+  const fetchParentData = useCallback(async () => {
     if (!profile?.user_id) return;
-
-    const fetchParentData = async () => {
-      setLoading(true);
+    setLoading(true);
       try {
         // Fetch children relationships
         const { data: relationships, error: relationshipsError } = await supabase
@@ -481,10 +493,16 @@ const ParentDashboard = () => {
       } finally {
         setLoading(false);
       }
-    };
+  }, [profile?.user_id]);
 
+  useEffect(() => {
     fetchParentData();
-  }, [profile]);
+  }, [fetchParentData]);
+
+  const handleRefresh = useCallback(async () => {
+    await fetchParentData();
+    toast.success('Dashboard refreshed');
+  }, [fetchParentData]);
 
   if (loading) {
     return (
@@ -494,7 +512,7 @@ const ParentDashboard = () => {
     );
   }
 
-  return (
+  const content = (
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
       <div className="animate-slide-up">
         <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">Parent Dashboard</h1>
@@ -608,6 +626,12 @@ const ParentDashboard = () => {
       </div>
     </div>
   );
+
+  if (isMobile) {
+    return <PullToRefresh onRefresh={handleRefresh}>{content}</PullToRefresh>;
+  }
+
+  return content;
 };
 
 const TeacherDashboard = () => {
