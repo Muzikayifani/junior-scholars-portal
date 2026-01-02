@@ -22,8 +22,8 @@ export default function Assessments() {
   }
 
   return (
-    <div className="animate-fade-in p-6">
-      <Tabs defaultValue="manage" className="space-y-6">
+    <div className="animate-fade-in p-3 sm:p-4 md:p-6">
+      <Tabs defaultValue="manage" className="space-y-4 sm:space-y-6">
         <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
           <TabsTrigger value="manage">Manage</TabsTrigger>
           <TabsTrigger value="create">Create New</TabsTrigger>

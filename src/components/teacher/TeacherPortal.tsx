@@ -102,15 +102,15 @@ const TeacherPortal = () => {
   }, [profile]);
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
       <div className="animate-slide-up">
-        <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">Teacher Portal</h1>
-        <p className="text-muted-foreground">Manage your classes, assessments, and schedule</p>
+        <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">Teacher Portal</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">Manage your classes, assessments, and schedule</p>
       </div>
 
       {/* Quick Stats */}
       {loading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
           <Card className="glass-card">
             <CardContent className="pt-6">
               <LoadingSpinner size="sm" />
@@ -133,7 +133,7 @@ const TeacherPortal = () => {
           </Card>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 animate-scale-in">
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4 animate-scale-in">
           <Card className="hover-lift hover-glow glass-card">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">My Classes</CardTitle>
@@ -181,48 +181,42 @@ const TeacherPortal = () => {
       )}
 
       <Tabs defaultValue="assessments" className="w-full animate-bounce-in">
-        <TabsList className="grid w-full grid-cols-3 md:grid-cols-4 lg:grid-cols-8 glass-card">
-          <TabsTrigger value="assessments" className="flex items-center gap-2 transition-all duration-200 hover:scale-105">
-            <ClipboardList className="h-4 w-4 transition-all duration-300 hover:rotate-12" />
-            <span className="hidden sm:inline">Create</span>
-            <span className="sm:hidden">New</span>
-          </TabsTrigger>
-          <TabsTrigger value="manage-assessments" className="flex items-center gap-2 transition-all duration-200 hover:scale-105">
-            <FileText className="h-4 w-4 transition-all duration-300 hover:rotate-12" />
-            <span className="hidden sm:inline">Assessments</span>
-            <span className="sm:hidden">Tests</span>
-          </TabsTrigger>
-          <TabsTrigger value="gradebook" className="flex items-center gap-2 transition-all duration-200 hover:scale-105">
-            <BookOpen className="h-4 w-4 transition-all duration-300 hover:rotate-12" />
-            <span className="hidden sm:inline">Grade Book</span>
-            <span className="sm:hidden">Grades</span>
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2 transition-all duration-200 hover:scale-105">
-            <BarChart3 className="h-4 w-4 transition-all duration-300 hover:rotate-12" />
-            <span className="hidden sm:inline">Analytics</span>
-            <span className="sm:hidden">Stats</span>
-          </TabsTrigger>
-          <TabsTrigger value="schedule" className="flex items-center gap-2 transition-all duration-200 hover:scale-105">
-            <Calendar className="h-4 w-4 transition-all duration-300 hover:rotate-12" />
-            <span className="hidden sm:inline">Schedule</span>
-            <span className="sm:hidden">Time</span>
-          </TabsTrigger>
-          <TabsTrigger value="students" className="flex items-center gap-2 transition-all duration-200 hover:scale-105">
-            <Users className="h-4 w-4 transition-all duration-300 hover:rotate-12" />
-            <span className="hidden sm:inline">Students</span>
-            <span className="sm:hidden">Students</span>
-          </TabsTrigger>
-          <TabsTrigger value="progress" className="flex items-center gap-2 transition-all duration-200 hover:scale-105">
-            <TrendingUp className="h-4 w-4 transition-all duration-300 hover:rotate-12" />
-            <span className="hidden sm:inline">Progress</span>
-            <span className="sm:hidden">Track</span>
-          </TabsTrigger>
-          <TabsTrigger value="reports" className="flex items-center gap-2 transition-all duration-200 hover:scale-105">
-            <TrendingUp className="h-4 w-4 transition-all duration-300 hover:rotate-12" />
-            <span className="hidden sm:inline">Reports</span>
-            <span className="sm:hidden">Reports</span>
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto -mx-3 sm:-mx-4 md:mx-0 px-3 sm:px-4 md:px-0">
+          <TabsList className="inline-flex w-max min-w-full md:w-full md:grid md:grid-cols-4 lg:grid-cols-8 glass-card gap-1">
+            <TabsTrigger value="assessments" className="flex items-center gap-1 sm:gap-2 transition-all duration-200 hover:scale-105 text-xs sm:text-sm px-2 sm:px-3">
+              <ClipboardList className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+              <span>Create</span>
+            </TabsTrigger>
+            <TabsTrigger value="manage-assessments" className="flex items-center gap-1 sm:gap-2 transition-all duration-200 hover:scale-105 text-xs sm:text-sm px-2 sm:px-3">
+              <FileText className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+              <span>Tests</span>
+            </TabsTrigger>
+            <TabsTrigger value="gradebook" className="flex items-center gap-1 sm:gap-2 transition-all duration-200 hover:scale-105 text-xs sm:text-sm px-2 sm:px-3">
+              <BookOpen className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+              <span>Grades</span>
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-1 sm:gap-2 transition-all duration-200 hover:scale-105 text-xs sm:text-sm px-2 sm:px-3">
+              <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+              <span>Stats</span>
+            </TabsTrigger>
+            <TabsTrigger value="schedule" className="flex items-center gap-1 sm:gap-2 transition-all duration-200 hover:scale-105 text-xs sm:text-sm px-2 sm:px-3">
+              <Calendar className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+              <span>Schedule</span>
+            </TabsTrigger>
+            <TabsTrigger value="students" className="flex items-center gap-1 sm:gap-2 transition-all duration-200 hover:scale-105 text-xs sm:text-sm px-2 sm:px-3">
+              <Users className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+              <span>Students</span>
+            </TabsTrigger>
+            <TabsTrigger value="progress" className="flex items-center gap-1 sm:gap-2 transition-all duration-200 hover:scale-105 text-xs sm:text-sm px-2 sm:px-3">
+              <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+              <span>Progress</span>
+            </TabsTrigger>
+            <TabsTrigger value="reports" className="flex items-center gap-1 sm:gap-2 transition-all duration-200 hover:scale-105 text-xs sm:text-sm px-2 sm:px-3">
+              <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+              <span>Reports</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
         
         <TabsContent value="assessments" className="space-y-4 animate-fade-in">
           <CreateAssessment onAssessmentCreated={handleAssessmentCreated} />
