@@ -173,13 +173,13 @@ const LearnerDashboard = () => {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
       <div className="animate-slide-up">
-        <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">Welcome Back!</h1>
-        <p className="text-muted-foreground">Here's what's happening in your learning journey</p>
+        <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">Welcome Back!</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">Here's what's happening in your learning journey</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 animate-scale-in">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4 animate-scale-in">
         <Card className="hover-lift hover-glow glass-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Classes</CardTitle>
@@ -234,25 +234,25 @@ const LearnerDashboard = () => {
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 animate-bounce-in">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 animate-bounce-in">
         <Card className="glass-card hover-lift">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ClipboardList className="h-5 w-5 text-primary" />
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <ClipboardList className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               Recent Assignments
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6 pt-0 sm:pt-0">
             {recentAssignments.length > 0 ? (
               recentAssignments.map((assignment) => (
-                <div key={assignment.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-200">
-                  <div>
-                    <p className="font-medium">{assignment.title}</p>
-                    <p className="text-sm text-muted-foreground">
+                <div key={assignment.id} className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-200 gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm sm:text-base truncate">{assignment.title}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       {assignment.dueDate ? `Due ${format(new Date(assignment.dueDate), 'MMM d')}` : 'No due date'}
                     </p>
                   </div>
-                  <Badge variant="destructive">Pending</Badge>
+                  <Badge variant="destructive" className="text-xs shrink-0">Pending</Badge>
                 </div>
               ))
             ) : (
@@ -264,23 +264,23 @@ const LearnerDashboard = () => {
         </Card>
 
         <Card className="glass-card hover-lift">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Award className="h-5 w-5 text-primary" />
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Award className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               Recent Grades
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6 pt-0 sm:pt-0">
             {recentGrades.length > 0 ? (
               recentGrades.map((grade) => (
-                <div key={grade.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-200">
-                  <div>
-                    <p className="font-medium">{grade.title}</p>
-                    <p className="text-sm text-muted-foreground">
+                <div key={grade.id} className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-200 gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm sm:text-base truncate">{grade.title}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       {grade.gradedAt ? format(new Date(grade.gradedAt), 'MMM d') : 'Recently graded'}
                     </p>
                   </div>
-                  <Badge className={grade.percentage >= 80 ? "bg-success text-success-foreground" : grade.percentage >= 60 ? "bg-info text-info-foreground" : "bg-destructive text-destructive-foreground"}>
+                  <Badge className={`text-xs shrink-0 ${grade.percentage >= 80 ? "bg-success text-success-foreground" : grade.percentage >= 60 ? "bg-info text-info-foreground" : "bg-destructive text-destructive-foreground"}`}>
                     {grade.percentage}%
                   </Badge>
                 </div>
@@ -495,13 +495,13 @@ const ParentDashboard = () => {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
       <div className="animate-slide-up">
-        <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">Parent Dashboard</h1>
-        <p className="text-muted-foreground">Track your children's academic progress</p>
+        <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">Parent Dashboard</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">Track your children's academic progress</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 animate-scale-in">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4 animate-scale-in">
         <Card className="hover-lift hover-glow glass-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Children</CardTitle>
@@ -547,26 +547,26 @@ const ParentDashboard = () => {
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 animate-bounce-in">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 animate-bounce-in">
         <Card className="glass-card hover-lift">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               Children Overview
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6 pt-0 sm:pt-0">
             {childrenData.length > 0 ? (
               childrenData.map((child) => (
-                <div key={child.userId} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-200">
-                  <div>
-                    <p className="font-medium">{child.name}</p>
-                    <p className="text-sm text-muted-foreground">
+                <div key={child.userId} className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-200 gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm sm:text-base truncate">{child.name}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       Grade {child.gradeLevel} • {child.className}
                     </p>
                   </div>
-                  <Badge className={child.averageGrade >= 80 ? "bg-success text-success-foreground" : child.averageGrade >= 60 ? "bg-info text-info-foreground" : "bg-muted text-muted-foreground"}>
-                    {child.averageGrade > 0 ? `${child.averageGrade}% Avg` : 'No grades'}
+                  <Badge className={`text-xs shrink-0 ${child.averageGrade >= 80 ? "bg-success text-success-foreground" : child.averageGrade >= 60 ? "bg-info text-info-foreground" : "bg-muted text-muted-foreground"}`}>
+                    {child.averageGrade > 0 ? `${child.averageGrade}%` : 'N/A'}
                   </Badge>
                 </div>
               ))
@@ -579,20 +579,20 @@ const ParentDashboard = () => {
         </Card>
 
         <Card className="glass-card hover-lift">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-primary" />
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               Recent Activity
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6 pt-0 sm:pt-0">
             {recentActivity.length > 0 ? (
               recentActivity.map((activity) => (
-                <div key={activity.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-200">
-                  <Award className={activity.percentage >= 80 ? "h-4 w-4 text-success" : activity.percentage >= 60 ? "h-4 w-4 text-info" : "h-4 w-4 text-muted-foreground"} />
-                  <div className="flex-1">
-                    <p className="font-medium">{activity.childName} - {activity.activity}</p>
-                    <p className="text-sm text-muted-foreground">
+                <div key={activity.id} className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-200">
+                  <Award className={`h-4 w-4 shrink-0 ${activity.percentage >= 80 ? "text-success" : activity.percentage >= 60 ? "text-info" : "text-muted-foreground"}`} />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm sm:text-base truncate">{activity.childName} - {activity.activity}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       {activity.gradedAt ? format(new Date(activity.gradedAt), 'MMM d') : 'Recently graded'} • {activity.percentage}%
                     </p>
                   </div>

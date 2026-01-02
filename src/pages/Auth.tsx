@@ -71,22 +71,22 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-primary p-4 animate-fade-in">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-primary p-3 sm:p-4 animate-fade-in">
       <Card className="w-full max-w-md glass-card hover-glow animate-scale-in">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4 animate-bounce-in">
-            <div className="p-3 rounded-full bg-primary/10 hover:bg-primary/20 transition-all duration-300">
-              <GraduationCap className="h-12 w-12 text-primary" />
+        <CardHeader className="text-center p-4 sm:p-6">
+          <div className="flex justify-center mb-3 sm:mb-4 animate-bounce-in">
+            <div className="p-2 sm:p-3 rounded-full bg-primary/10 hover:bg-primary/20 transition-all duration-300">
+              <GraduationCap className="h-10 w-10 sm:h-12 sm:w-12 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-2xl bg-gradient-primary bg-clip-text text-transparent">
+          <CardTitle className="text-xl sm:text-2xl bg-gradient-primary bg-clip-text text-transparent">
             Junior Scholars Portal
           </CardTitle>
-          <CardDescription className="animate-slide-up">
+          <CardDescription className="animate-slide-up text-sm">
             Access your learning journey
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
           <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid w-full grid-cols-2 glass-card">
               <TabsTrigger value="signin" className="transition-all duration-200 hover:scale-105">Sign In</TabsTrigger>
