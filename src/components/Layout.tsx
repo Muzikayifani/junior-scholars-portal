@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { LogOut, User } from 'lucide-react';
 import { NotificationCenter } from '@/components/NotificationCenter';
 import { GlobalSearch } from '@/components/GlobalSearch';
+import { MobileBottomNav } from '@/components/MobileBottomNav';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -13,6 +15,7 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const { user, signOut, profile, loading } = useAuth();
+  const isMobile = useIsMobile();
 
   if (loading) {
     return (
@@ -70,10 +73,12 @@ const Layout = ({ children }: LayoutProps) => {
             </div>
           </header>
           
-          <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-x-hidden">
+          <main className={`flex-1 p-3 sm:p-4 md:p-6 overflow-x-hidden ${isMobile ? 'pb-20' : ''}`}>
             {children}
           </main>
         </div>
+        
+        {isMobile && <MobileBottomNav />}
       </div>
     </SidebarProvider>
   );

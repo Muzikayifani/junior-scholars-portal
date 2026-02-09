@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +12,8 @@ import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { AssignmentDetailsDialog } from '@/components/learner/AssignmentDetailsDialog';
 import { FileUploadDialog } from '@/components/learner/FileUploadDialog';
+import { PullToRefresh } from '@/components/PullToRefresh';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Assignment {
   id: string;
@@ -30,6 +32,7 @@ interface Assignment {
 
 export default function Assignments() {
   const { profile, user, loading: authLoading } = useAuth();
+  const isMobile = useIsMobile();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const childUserId = searchParams.get('child');
@@ -41,13 +44,8 @@ export default function Assignments() {
   const [isUploading, setIsUploading] = useState(false);
   const [childName, setChildName] = useState<string>('');
 
-  useEffect(() => {
-    if (profile && user) {
-      fetchAssignments();
-    }
-  }, [profile, user, childUserId]);
-
-  const fetchAssignments = async () => {
+  const fetchAssignments = useCallback(async () => {
+    if (!profile || !user) return;
     try {
       setLoading(true);
       
@@ -236,7 +234,16 @@ export default function Assignments() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [profile, user, childUserId]);
+
+  useEffect(() => {
+    fetchAssignments();
+  }, [fetchAssignments]);
+
+  const handleRefresh = useCallback(async () => {
+    await fetchAssignments();
+    toast({ title: 'Refreshed', description: 'Assignments updated' });
+  }, [fetchAssignments, toast]);
 
   if (authLoading || loading) {
     return (
@@ -439,8 +446,8 @@ export default function Assignments() {
     setUploadOpen(true);
   };
 
-  return (
-    <div className="animate-fade-in p-6 space-y-6">
+  const content = (
+    <div className="animate-fade-in p-3 sm:p-6 space-y-6">
       {childUserId && profile?.role === 'parent' && (
         <Button variant="ghost" className="mb-4" onClick={() => window.history.back()}>
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -544,4 +551,10 @@ export default function Assignments() {
       )}
     </div>
   );
+
+  if (isMobile) {
+    return <PullToRefresh onRefresh={handleRefresh}>{content}</PullToRefresh>;
+  }
+
+  return content;
 }

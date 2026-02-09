@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Award, TrendingUp, Calendar, BarChart3, FileText, Target, ArrowLeft } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { format } from 'date-fns';
+import { PullToRefresh } from '@/components/PullToRefresh';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { toast } from 'sonner';
 
 interface Result {
   id: string;
@@ -27,6 +30,7 @@ interface Result {
 
 export default function Results() {
   const { profile, user, loading: authLoading } = useAuth();
+  const isMobile = useIsMobile();
   const [searchParams] = useSearchParams();
   const childUserId = searchParams.get('child');
   const [results, setResults] = useState<Result[]>([]);
@@ -34,13 +38,8 @@ export default function Results() {
   const [averageScore, setAverageScore] = useState(0);
   const [childName, setChildName] = useState<string>('');
 
-  useEffect(() => {
-    if (profile && user) {
-      fetchResults();
-    }
-  }, [profile, user, childUserId]);
-
-  const fetchResults = async () => {
+  const fetchResults = useCallback(async () => {
+    if (!profile || !user) return;
     try {
       setLoading(true);
       
@@ -209,7 +208,16 @@ export default function Results() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [profile, user, childUserId]);
+
+  useEffect(() => {
+    fetchResults();
+  }, [fetchResults]);
+
+  const handleRefresh = useCallback(async () => {
+    await fetchResults();
+    toast.success('Results refreshed');
+  }, [fetchResults]);
 
   if (authLoading || loading) {
     return (
@@ -298,8 +306,8 @@ export default function Results() {
     </Card>
   );
 
-  return (
-    <div className="animate-fade-in p-6 space-y-6">
+  const content = (
+    <div className="animate-fade-in p-3 sm:p-6 space-y-6">
       {childUserId && profile?.role === 'parent' && (
         <Button variant="ghost" className="mb-4" onClick={() => window.history.back()}>
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -440,4 +448,10 @@ export default function Results() {
       )}
     </div>
   );
+
+  if (isMobile) {
+    return <PullToRefresh onRefresh={handleRefresh}>{content}</PullToRefresh>;
+  }
+
+  return content;
 }
