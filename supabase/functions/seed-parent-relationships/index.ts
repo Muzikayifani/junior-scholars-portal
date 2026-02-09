@@ -118,8 +118,8 @@ serve(async (req) => {
             .eq('class_id', learner.class_id);
 
           if (!existingAssessments?.length) {
-            // Create sample assessments
-            const assessmentTypes = ['Homework', 'Test', 'Quiz'];
+            // Create sample assessments - use valid types from database constraint
+            const assessmentTypes = ['assignment', 'quiz', 'test'];
             
             for (let i = 0; i < Math.min(3, subjects.length); i++) {
               const subject = subjects[i];
