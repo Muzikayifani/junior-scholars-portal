@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +20,8 @@ import {
   Phone
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { PullToRefresh } from '@/components/PullToRefresh';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ChildProfile {
   user_id: string;
@@ -51,14 +53,13 @@ interface ChildData {
 const Children = () => {
   const { profile } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [children, setChildren] = useState<ChildData[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchChildren = useCallback(async () => {
     if (!profile?.user_id) return;
-
-    const fetchChildren = async () => {
-      setLoading(true);
+    setLoading(true);
       try {
         // Fetch parent-child relationships with child profiles
         const { data: relationships, error: relError } = await supabase
@@ -171,10 +172,16 @@ const Children = () => {
       } finally {
         setLoading(false);
       }
-    };
+  }, [profile?.user_id]);
 
+  useEffect(() => {
     fetchChildren();
-  }, [profile]);
+  }, [fetchChildren]);
+
+  const handleRefresh = useCallback(async () => {
+    await fetchChildren();
+    toast.success('Children data refreshed');
+  }, [fetchChildren]);
 
   const getInitials = (name: string) => {
     return name
@@ -200,7 +207,7 @@ const Children = () => {
   }
 
   if (children.length === 0) {
-    return (
+    const emptyContent = (
       <div className="space-y-6 animate-fade-in">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">My Children</h1>
@@ -222,10 +229,15 @@ const Children = () => {
         </Card>
       </div>
     );
+
+    if (isMobile) {
+      return <PullToRefresh onRefresh={handleRefresh}>{emptyContent}</PullToRefresh>;
+    }
+    return emptyContent;
   }
 
-  return (
-    <div className="space-y-6 animate-fade-in">
+  const content = (
+    <div className="space-y-6 animate-fade-in p-3 sm:p-0">
       <div className="animate-slide-up">
         <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">My Children</h1>
         <p className="text-muted-foreground">View and manage your children's academic progress</p>
@@ -382,6 +394,12 @@ const Children = () => {
       </div>
     </div>
   );
+
+  if (isMobile) {
+    return <PullToRefresh onRefresh={handleRefresh}>{content}</PullToRefresh>;
+  }
+
+  return content;
 };
 
 export default Children;
