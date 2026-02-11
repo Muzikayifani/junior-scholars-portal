@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
 import { toast } from 'sonner';
 
 export interface Notification {
@@ -15,6 +16,7 @@ export interface Notification {
 
 export const useRealtimeNotifications = () => {
   const { profile, user } = useAuth();
+  const { preferences } = useNotificationPreferences();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -26,23 +28,23 @@ export const useRealtimeNotifications = () => {
       createdAt: new Date(),
     };
     
-    setNotifications(prev => [newNotification, ...prev].slice(0, 50)); // Keep last 50
+    setNotifications(prev => [newNotification, ...prev].slice(0, 50));
     setUnreadCount(prev => prev + 1);
     
-    // Show toast notification
+    // Show toast notification (always shown as in-app)
     toast(notification.title, {
       description: notification.message,
       duration: 5000,
     });
 
-    // Try to show browser notification
-    if ('Notification' in window && Notification.permission === 'granted') {
+    // Browser push notification only if enabled
+    if (preferences.push_enabled && 'Notification' in window && Notification.permission === 'granted') {
       new Notification(notification.title, {
         body: notification.message,
         icon: '/icons/icon-192x192.png',
       });
     }
-  }, []);
+  }, [preferences.push_enabled]);
 
   const markAsRead = useCallback((notificationId: string) => {
     setNotifications(prev => 
@@ -63,32 +65,22 @@ export const useRealtimeNotifications = () => {
 
   // Request notification permission
   useEffect(() => {
-    if ('Notification' in window && Notification.permission === 'default') {
+    if (preferences.push_enabled && 'Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission();
     }
-  }, []);
+  }, [preferences.push_enabled]);
 
   // Subscribe to real-time updates
   useEffect(() => {
     if (!user?.id) return;
 
-    // Listen for new messages
     const messagesChannel = supabase
       .channel('notifications-messages')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-        },
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' },
         async (payload) => {
           const newMessage = payload.new as any;
-          
-          // Don't notify for own messages
           if (newMessage.sender_user_id === user.id) return;
 
-          // Check if user is participant in this thread
           const { data: participant } = await supabase
             .from('thread_participants')
             .select('id')
@@ -97,7 +89,6 @@ export const useRealtimeNotifications = () => {
             .single();
 
           if (participant) {
-            // Get sender name
             const { data: sender } = await supabase
               .from('profiles')
               .select('full_name')
@@ -115,23 +106,14 @@ export const useRealtimeNotifications = () => {
       )
       .subscribe();
 
-    // Listen for new grades (results)
     const gradesChannel = supabase
       .channel('notifications-grades')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'results',
-        },
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'results' },
         async (payload) => {
           const updatedResult = payload.new as any;
           const oldResult = payload.old as any;
 
-          // Only notify when status changes to 'graded'
           if (updatedResult.status === 'graded' && oldResult.status !== 'graded') {
-            // Check if this result belongs to current user (learner)
             const { data: learner } = await supabase
               .from('learners')
               .select('user_id')
@@ -139,7 +121,6 @@ export const useRealtimeNotifications = () => {
               .single();
 
             if (learner?.user_id === user.id) {
-              // Get assessment info
               const { data: assessment } = await supabase
                 .from('assessments')
                 .select('title, total_marks')
@@ -161,22 +142,13 @@ export const useRealtimeNotifications = () => {
       )
       .subscribe();
 
-    // Listen for new assessments (assignments)
     const assessmentsChannel = supabase
       .channel('notifications-assessments')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'assessments',
-        },
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'assessments' },
         async (payload) => {
           const newAssessment = payload.new as any;
-          
           if (!newAssessment.is_published) return;
 
-          // Check if learner is enrolled in this class
           const { data: learner } = await supabase
             .from('learners')
             .select('id')

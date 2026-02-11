@@ -343,6 +343,39 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          activity_status: boolean
+          created_at: string
+          email_enabled: boolean
+          id: string
+          profile_visible: boolean
+          push_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activity_status?: boolean
+          created_at?: string
+          email_enabled?: boolean
+          id?: string
+          profile_visible?: boolean
+          push_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activity_status?: boolean
+          created_at?: string
+          email_enabled?: boolean
+          id?: string
+          profile_visible?: boolean
+          push_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       parent_child_relationships: {
         Row: {
           child_user_id: string

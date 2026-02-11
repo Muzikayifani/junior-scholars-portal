@@ -10,13 +10,13 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Settings as SettingsIcon, Bell, Eye, Lock } from 'lucide-react';
+import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
 
 export default function Settings() {
   const { profile, user, loading } = useAuth();
   const { toast } = useToast();
   const [isUpdating, setIsUpdating] = useState(false);
-  const [notifications, setNotifications] = useState(true);
-  const [emailNotifications, setEmailNotifications] = useState(true);
+  const { preferences, loading: prefsLoading, updatePreference } = useNotificationPreferences();
   
   const [formData, setFormData] = useState({
     firstName: profile?.first_name || '',
@@ -178,8 +178,9 @@ export default function Settings() {
               </p>
             </div>
             <Switch
-              checked={notifications}
-              onCheckedChange={setNotifications}
+              checked={preferences.push_enabled}
+              onCheckedChange={(val) => updatePreference('push_enabled', val)}
+              disabled={prefsLoading}
             />
           </div>
           
@@ -189,12 +190,13 @@ export default function Settings() {
             <div className="space-y-1">
               <Label>Email Notifications</Label>
               <p className="text-sm text-muted-foreground">
-                Receive important updates via email
+                Receive important updates via email (coming soon)
               </p>
             </div>
             <Switch
-              checked={emailNotifications}
-              onCheckedChange={setEmailNotifications}
+              checked={preferences.email_enabled}
+              onCheckedChange={(val) => updatePreference('email_enabled', val)}
+              disabled={prefsLoading}
             />
           </div>
         </CardContent>
@@ -219,7 +221,11 @@ export default function Settings() {
                 Allow others to see your profile information
               </p>
             </div>
-            <Switch defaultChecked />
+            <Switch
+              checked={preferences.profile_visible}
+              onCheckedChange={(val) => updatePreference('profile_visible', val)}
+              disabled={prefsLoading}
+            />
           </div>
           
           <Separator />
@@ -231,7 +237,11 @@ export default function Settings() {
                 Show when you're online or active
               </p>
             </div>
-            <Switch defaultChecked />
+            <Switch
+              checked={preferences.activity_status}
+              onCheckedChange={(val) => updatePreference('activity_status', val)}
+              disabled={prefsLoading}
+            />
           </div>
         </CardContent>
       </Card>
