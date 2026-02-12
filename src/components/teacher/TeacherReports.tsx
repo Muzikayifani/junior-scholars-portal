@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,18 +6,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { BarChart3, TrendingUp, TrendingDown, Users, Target, Award, BookOpen } from 'lucide-react';
+import { BarChart3, TrendingUp, TrendingDown, Users, Target, Award, BookOpen, Download, Loader2 } from 'lucide-react';
+import { toast as sonnerToast } from 'sonner';
 
 const TeacherReports = () => {
   const { profile } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [classes, setClasses] = useState<any[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [classStats, setClassStats] = useState<any>(null);
   const [subjectPerformance, setSubjectPerformance] = useState<any[]>([]);
   const [assessmentOverview, setAssessmentOverview] = useState<any[]>([]);
+  const reportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadClasses();
@@ -199,6 +203,67 @@ const TeacherReports = () => {
     setLoading(false);
   };
 
+  const handleExportPDF = async () => {
+    if (!reportRef.current || !classStats) return;
+    setExporting(true);
+    sonnerToast.info('Generating PDF report...');
+
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+      const scaledWidth = imgWidth * ratio;
+      const scaledHeight = imgHeight * ratio;
+
+      // If content fits on one page
+      if (scaledHeight <= pdfHeight) {
+        pdf.addImage(imgData, 'PNG', 0, 0, scaledWidth, scaledHeight);
+      } else {
+        // Multi-page
+        let yOffset = 0;
+        const pageHeight = pdfHeight / ratio;
+        while (yOffset < imgHeight) {
+          const sourceY = yOffset;
+          const sourceH = Math.min(pageHeight, imgHeight - yOffset);
+
+          const pageCanvas = document.createElement('canvas');
+          pageCanvas.width = imgWidth;
+          pageCanvas.height = sourceH;
+          const ctx = pageCanvas.getContext('2d');
+          ctx?.drawImage(canvas, 0, sourceY, imgWidth, sourceH, 0, 0, imgWidth, sourceH);
+
+          const pageImgData = pageCanvas.toDataURL('image/png');
+          if (yOffset > 0) pdf.addPage();
+          pdf.addImage(pageImgData, 'PNG', 0, 0, scaledWidth, sourceH * ratio);
+          yOffset += pageHeight;
+        }
+      }
+
+      const className = selectedClass?.name || 'class';
+      pdf.save(`${className}-report-${new Date().toISOString().split('T')[0]}.pdf`);
+      sonnerToast.success('PDF report downloaded successfully!');
+    } catch (error) {
+      console.error('PDF export error:', error);
+      sonnerToast.error('Failed to generate PDF report');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -211,12 +276,20 @@ const TeacherReports = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-          <BarChart3 className="h-6 w-6" />
-          Teacher Reports & Analytics
-        </h2>
-        <p className="text-muted-foreground">View class performance and assessment analytics</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <BarChart3 className="h-6 w-6" />
+            Teacher Reports & Analytics
+          </h2>
+          <p className="text-muted-foreground">View class performance and assessment analytics</p>
+        </div>
+        {selectedClassId && classStats && (
+          <Button onClick={handleExportPDF} disabled={exporting} variant="outline" className="gap-2">
+            {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            {exporting ? 'Generating...' : 'Export PDF'}
+          </Button>
+        )}
       </div>
 
       {/* Class Selection */}
@@ -243,152 +316,160 @@ const TeacherReports = () => {
         </CardContent>
       </Card>
 
-      {/* Class Overview Stats */}
-      {selectedClassId && classStats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold text-primary">{classStats.totalStudents}</p>
-                  <p className="text-sm text-muted-foreground">Total Students</p>
-                </div>
-                <Users className="h-8 w-8 text-primary opacity-20" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold text-info">{classStats.totalAssessments}</p>
-                  <p className="text-sm text-muted-foreground">Assessments</p>
-                </div>
-                <BookOpen className="h-8 w-8 text-info opacity-20" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold text-success">{classStats.averagePerformance}%</p>
-                  <p className="text-sm text-muted-foreground">Avg Performance</p>
-                </div>
-                <Award className="h-8 w-8 text-success opacity-20" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold text-destructive">{classStats.pendingGrading}</p>
-                  <p className="text-sm text-muted-foreground">Pending Grading</p>
-                </div>
-                <Target className="h-8 w-8 text-destructive opacity-20" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Subject Performance */}
-      {selectedClassId && subjectPerformance.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Subject Performance Overview</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Average performance by subject for {selectedClass?.name}
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {subjectPerformance.map((subject) => (
-                <div key={subject.name} className="space-y-2">
-                  <div className="flex justify-between items-center">
+      {/* Exportable Report Content */}
+      <div ref={reportRef}>
+        {/* Class Overview Stats */}
+        {selectedClassId && classStats && (
+          <>
+            <div className="mb-4 p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground print:block hidden">
+              <strong>{selectedClass?.name}</strong> — Generated {new Date().toLocaleDateString()}
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium">{subject.name}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {subject.assessments} assessment{subject.assessments !== 1 ? 's' : ''} • 
-                        {subject.submissions} submission{subject.submissions !== 1 ? 's' : ''}
-                      </p>
+                      <p className="text-2xl font-bold text-primary">{classStats.totalStudents}</p>
+                      <p className="text-sm text-muted-foreground">Total Students</p>
                     </div>
-                    <div className="text-right">
-                      <div className="flex items-center gap-2">
-                        <span className="text-2xl font-bold">{subject.average}%</span>
-                        {subject.average >= 80 ? (
-                          <TrendingUp className="h-5 w-5 text-green-500" />
-                        ) : subject.average >= 60 ? (
-                          <Target className="h-5 w-5 text-yellow-500" />
-                        ) : (
-                          <TrendingDown className="h-5 w-5 text-red-500" />
-                        )}
+                    <Users className="h-8 w-8 text-primary opacity-20" />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-2xl font-bold text-info">{classStats.totalAssessments}</p>
+                      <p className="text-sm text-muted-foreground">Assessments</p>
+                    </div>
+                    <BookOpen className="h-8 w-8 text-info opacity-20" />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-2xl font-bold text-success">{classStats.averagePerformance}%</p>
+                      <p className="text-sm text-muted-foreground">Avg Performance</p>
+                    </div>
+                    <Award className="h-8 w-8 text-success opacity-20" />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-2xl font-bold text-destructive">{classStats.pendingGrading}</p>
+                      <p className="text-sm text-muted-foreground">Pending Grading</p>
+                    </div>
+                    <Target className="h-8 w-8 text-destructive opacity-20" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        )}
+
+        {/* Subject Performance */}
+        {selectedClassId && subjectPerformance.length > 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Subject Performance Overview</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Average performance by subject for {selectedClass?.name}
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {subjectPerformance.map((subject) => (
+                  <div key={subject.name} className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h4 className="font-medium">{subject.name}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {subject.assessments} assessment{subject.assessments !== 1 ? 's' : ''} • 
+                          {subject.submissions} submission{subject.submissions !== 1 ? 's' : ''}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl font-bold">{subject.average}%</span>
+                          {subject.average >= 80 ? (
+                            <TrendingUp className="h-5 w-5 text-green-500" />
+                          ) : subject.average >= 60 ? (
+                            <Target className="h-5 w-5 text-yellow-500" />
+                          ) : (
+                            <TrendingDown className="h-5 w-5 text-red-500" />
+                          )}
+                        </div>
                       </div>
                     </div>
+                    <Progress value={subject.average} className="w-full" />
                   </div>
-                  <Progress value={subject.average} className="w-full" />
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-      {/* Assessment Overview */}
-      {selectedClassId && assessmentOverview.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Assessment Overview</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Individual assessment performance for {selectedClass?.name}
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {assessmentOverview.map((assessment) => (
-                <div key={assessment.id} className="border rounded-lg p-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h4 className="font-medium">{assessment.title}</h4>
-                      <div className="flex gap-2 mt-1">
-                        <Badge variant="outline">{assessment.type}</Badge>
-                        <Badge variant="secondary">{assessment.subject}</Badge>
+        {/* Assessment Overview */}
+        {selectedClassId && assessmentOverview.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Assessment Overview</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Individual assessment performance for {selectedClass?.name}
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {assessmentOverview.map((assessment) => (
+                  <div key={assessment.id} className="border rounded-lg p-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h4 className="font-medium">{assessment.title}</h4>
+                        <div className="flex gap-2 mt-1">
+                          <Badge variant="outline">{assessment.type}</Badge>
+                          <Badge variant="secondary">{assessment.subject}</Badge>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-bold">{assessment.averageScore}%</div>
+                        <p className="text-sm text-muted-foreground">Class Average</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-lg font-bold">{assessment.averageScore}%</div>
-                      <p className="text-sm text-muted-foreground">Class Average</p>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Total Submissions</p>
+                        <p className="font-medium">{assessment.totalSubmissions}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Graded</p>
+                        <p className="font-medium">{assessment.gradedSubmissions}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Due Date</p>
+                        <p className="font-medium">{assessment.dueDate ? formatDate(assessment.dueDate) : 'N/A'}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-3">
+                      <Progress value={assessment.averageScore} className="w-full" />
                     </div>
                   </div>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Total Submissions</p>
-                      <p className="font-medium">{assessment.totalSubmissions}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Graded</p>
-                      <p className="font-medium">{assessment.gradedSubmissions}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Due Date</p>
-                      <p className="font-medium">{formatDate(assessment.dueDate)}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-3">
-                    <Progress value={assessment.averageScore} className="w-full" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
       {selectedClassId && loading && (
         <div className="text-center py-8">

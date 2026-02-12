@@ -1,11 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { TrendingUp, Users, Target, Award, AlertTriangle } from 'lucide-react';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  LineChart, Line, Legend, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis
+} from 'recharts';
+import { TrendingUp, Users, Target, Award, AlertTriangle, GitCompareArrows } from 'lucide-react';
 
 interface GradeDistribution {
   range: string;
@@ -21,6 +24,8 @@ interface AssessmentAnalytics {
   total_students: number;
   graded_count: number;
   distribution: GradeDistribution[];
+  created_at: string;
+  class_name: string;
 }
 
 interface ClassPerformance {
@@ -28,6 +33,8 @@ interface ClassPerformance {
   average: number;
   student_count: number;
 }
+
+const COLORS = ['hsl(var(--primary))', 'hsl(var(--success, 142 71% 45%))', 'hsl(var(--info, 217 91% 60%))', '#ff7300', '#8dd1e1'];
 
 const GradeAnalytics = () => {
   const { profile } = useAuth();
@@ -43,8 +50,6 @@ const GradeAnalytics = () => {
     gradingCompletion: 0
   });
 
-  const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#8dd1e1'];
-
   useEffect(() => {
     loadClasses();
     loadAnalyticsData();
@@ -52,31 +57,26 @@ const GradeAnalytics = () => {
 
   const loadClasses = async () => {
     if (!profile) return;
-
     const { data } = await supabase
       .from('classes')
       .select('id, name, grade_level')
       .order('name');
-
-    if (data) {
-      setClasses(data);
-    }
+    if (data) setClasses(data);
   };
 
   const loadAnalyticsData = async () => {
     if (!profile) return;
-    
     setLoading(true);
     try {
-      // Get assessments with results
       let assessmentQuery = supabase
         .from('assessments')
         .select(`
-          id, title, type, total_marks, class_id,
+          id, title, type, total_marks, class_id, created_at,
           class:classes(name),
           results(marks_obtained, status, learner_id)
         `)
-        .eq('teacher_id', profile.user_id);
+        .eq('teacher_id', profile.user_id)
+        .order('created_at', { ascending: true });
 
       if (selectedClass !== 'all') {
         assessmentQuery = assessmentQuery.eq('class_id', selectedClass);
@@ -85,15 +85,12 @@ const GradeAnalytics = () => {
       const { data: assessmentData, error } = await assessmentQuery;
       if (error) throw error;
 
-      // Process assessment analytics
       const analytics: AssessmentAnalytics[] = assessmentData?.map(assessment => {
         const results = assessment.results || [];
         const gradedResults = results.filter(r => r.status === 'graded' && r.marks_obtained !== null);
-        
         const total = gradedResults.reduce((sum, r) => sum + (r.marks_obtained || 0), 0);
         const average = gradedResults.length > 0 ? Math.round((total / gradedResults.length / assessment.total_marks) * 100) : 0;
 
-        // Grade distribution
         const distribution = [
           { range: '90-100%', count: 0, percentage: 0 },
           { range: '80-89%', count: 0, percentage: 0 },
@@ -122,21 +119,21 @@ const GradeAnalytics = () => {
           average,
           total_students: results.length,
           graded_count: gradedResults.length,
-          distribution
+          distribution,
+          created_at: assessment.created_at,
+          class_name: (assessment.class as any)?.name || 'Unknown'
         };
       }) || [];
 
       setAssessmentAnalytics(analytics);
 
-      // Get class performance
+      // Class performance
       const classStats: { [key: string]: { total: number; count: number; students: Set<string> } } = {};
-      
       assessmentData?.forEach(assessment => {
-        const className = assessment.class?.name || 'Unknown';
+        const className = (assessment.class as any)?.name || 'Unknown';
         if (!classStats[className]) {
           classStats[className] = { total: 0, count: 0, students: new Set() };
         }
-
         assessment.results?.forEach(result => {
           if (result.status === 'graded' && result.marks_obtained !== null) {
             const percentage = (result.marks_obtained / assessment.total_marks) * 100;
@@ -152,41 +149,74 @@ const GradeAnalytics = () => {
         average: stats.count > 0 ? Math.round(stats.total / stats.count) : 0,
         student_count: stats.students.size
       }));
-
       setClassPerformance(classPerf);
 
-      // Calculate overall stats
+      // Overall stats
       const totalStudents = new Set(assessmentData?.flatMap(a => a.results?.map(r => r.learner_id) || [])).size;
       const totalAssessments = assessmentData?.length || 0;
-      const allGradedResults = assessmentData?.flatMap(a => 
+      const allGradedResults = assessmentData?.flatMap(a =>
         a.results?.filter(r => r.status === 'graded' && r.marks_obtained !== null) || []
       ) || [];
       const totalPossibleGrades = assessmentData?.reduce((sum, a) => sum + (a.results?.length || 0), 0) || 0;
-      
-      const averageGrade = allGradedResults.length > 0 
-        ? Math.round(allGradedResults.reduce((sum, result, index) => {
+
+      const averageGrade = allGradedResults.length > 0
+        ? Math.round(allGradedResults.reduce((sum, result) => {
             const assessment = assessmentData?.find(a => a.results?.includes(result));
             const percentage = assessment ? (result.marks_obtained / assessment.total_marks) * 100 : 0;
             return sum + percentage;
           }, 0) / allGradedResults.length)
         : 0;
 
-      const gradingCompletion = totalPossibleGrades > 0 
+      const gradingCompletion = totalPossibleGrades > 0
         ? Math.round((allGradedResults.length / totalPossibleGrades) * 100)
         : 0;
 
-      setOverallStats({
-        totalStudents,
-        totalAssessments,
-        averageGrade,
-        gradingCompletion
-      });
-
+      setOverallStats({ totalStudents, totalAssessments, averageGrade, gradingCompletion });
     } catch (error: any) {
       console.error('Error loading analytics:', error);
     }
     setLoading(false);
   };
+
+  // Performance trend data - averages over time
+  const trendData = useMemo(() => {
+    if (assessmentAnalytics.length === 0) return [];
+    return assessmentAnalytics
+      .filter(a => a.graded_count > 0)
+      .map(a => ({
+        name: a.title.length > 15 ? a.title.substring(0, 15) + '…' : a.title,
+        average: a.average,
+        date: new Date(a.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        class: a.class_name
+      }));
+  }, [assessmentAnalytics]);
+
+  // Radar data for class comparison
+  const radarData = useMemo(() => {
+    if (classPerformance.length < 2) return [];
+    // Build radar dimensions from assessment types
+    const typesByClass: Record<string, Record<string, { total: number; count: number }>> = {};
+    assessmentAnalytics.forEach(a => {
+      if (!typesByClass[a.class_name]) typesByClass[a.class_name] = {};
+      if (!typesByClass[a.class_name][a.type]) typesByClass[a.class_name][a.type] = { total: 0, count: 0 };
+      if (a.graded_count > 0) {
+        typesByClass[a.class_name][a.type].total += a.average;
+        typesByClass[a.class_name][a.type].count++;
+      }
+    });
+
+    const allTypes = [...new Set(assessmentAnalytics.map(a => a.type))];
+    const classNames = Object.keys(typesByClass);
+
+    return allTypes.map(type => {
+      const point: any = { type };
+      classNames.forEach(cls => {
+        const stats = typesByClass[cls]?.[type];
+        point[cls] = stats && stats.count > 0 ? Math.round(stats.total / stats.count) : 0;
+      });
+      return point;
+    });
+  }, [assessmentAnalytics, classPerformance]);
 
   const getPerformanceColor = (average: number) => {
     if (average >= 90) return "text-green-600";
@@ -242,7 +272,6 @@ const GradeAnalytics = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -254,7 +283,6 @@ const GradeAnalytics = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -268,7 +296,6 @@ const GradeAnalytics = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -282,8 +309,43 @@ const GradeAnalytics = () => {
         </Card>
       </div>
 
+      {/* Performance Trend Line Chart */}
+      {trendData.length > 1 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Performance Trend Over Time
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={trendData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis domain={[0, 100]} />
+                <Tooltip
+                  formatter={(value: any) => [`${value}%`, 'Average Score']}
+                  labelFormatter={(label) => `Date: ${label}`}
+                />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="average"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                  activeDot={{ r: 6 }}
+                  name="Average %"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Assessment Performance */}
+        {/* Assessment Performance Bar Chart */}
         <Card>
           <CardHeader>
             <CardTitle>Assessment Performance</CardTitle>
@@ -292,46 +354,71 @@ const GradeAnalytics = () => {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={assessmentAnalytics}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="title" 
-                  angle={-45}
-                  textAnchor="end"
-                  height={80}
-                  interval={0}
-                />
+                <XAxis dataKey="title" angle={-45} textAnchor="end" height={80} interval={0} />
                 <YAxis />
-                <Tooltip 
-                  formatter={(value: any, name: string) => [
-                    name === 'average' ? `${value}%` : value,
-                    name === 'average' ? 'Average Score' : 'Graded Students'
-                  ]}
-                />
-                <Bar dataKey="average" fill="#8884d8" name="average" />
+                <Tooltip formatter={(value: any, name: string) => [
+                  name === 'average' ? `${value}%` : value,
+                  name === 'average' ? 'Average Score' : 'Graded Students'
+                ]} />
+                <Bar dataKey="average" fill="hsl(var(--primary))" name="average" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        {/* Class Performance */}
+        {/* Class Performance Bar Chart */}
         <Card>
           <CardHeader>
-            <CardTitle>Class Performance</CardTitle>
+            <CardTitle>Class Performance Comparison</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={classPerformance}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="class_name" />
-                <YAxis />
+                <YAxis domain={[0, 100]} />
                 <Tooltip formatter={(value: any) => [`${value}%`, 'Average Score']} />
-                <Bar dataKey="average" fill="#82ca9d" />
+                <Bar dataKey="average" fill="hsl(var(--success, 142 71% 45%))" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
 
-      {/* Assessment Details */}
+      {/* Radar Chart for Class Comparison by Assessment Type */}
+      {radarData.length > 0 && classPerformance.length >= 2 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <GitCompareArrows className="h-5 w-5" />
+              Class Comparison by Assessment Type
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={350}>
+              <RadarChart data={radarData}>
+                <PolarGrid />
+                <PolarAngleAxis dataKey="type" />
+                <PolarRadiusAxis domain={[0, 100]} />
+                {classPerformance.map((cls, i) => (
+                  <Radar
+                    key={cls.class_name}
+                    name={cls.class_name}
+                    dataKey={cls.class_name}
+                    stroke={COLORS[i % COLORS.length]}
+                    fill={COLORS[i % COLORS.length]}
+                    fillOpacity={0.15}
+                  />
+                ))}
+                <Legend />
+                <Tooltip formatter={(value: any) => [`${value}%`]} />
+              </RadarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Assessment Breakdown */}
       <Card>
         <CardHeader>
           <CardTitle>Assessment Breakdown</CardTitle>
@@ -354,17 +441,16 @@ const GradeAnalytics = () => {
                     {getPerformanceBadge(assessment.average)}
                   </div>
                 </div>
-
                 <div className="grid grid-cols-5 gap-2">
                   {assessment.distribution.map((dist, index) => (
                     <div key={index} className="text-center">
-                      <div 
+                      <div
                         className="h-20 flex items-end justify-center rounded"
                         style={{ backgroundColor: COLORS[index % COLORS.length] + '20' }}
                       >
-                        <div 
+                        <div
                           className="w-full rounded"
-                          style={{ 
+                          style={{
                             height: `${Math.max(dist.percentage, 5)}%`,
                             backgroundColor: COLORS[index % COLORS.length]
                           }}
