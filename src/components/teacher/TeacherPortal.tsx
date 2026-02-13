@@ -10,7 +10,8 @@ import GradeBook from './GradeBook';
 import GradeAnalytics from './GradeAnalytics';
 import TeacherReports from './TeacherReports';
 import StudentProgressTracking from './StudentProgressTracking';
-import { BookOpen, Calendar, ClipboardList, Users, Award, Settings, TrendingUp, BarChart3, FileText } from 'lucide-react';
+import AllStudents from './AllStudents';
+import { BookOpen, Calendar, ClipboardList, Users, Award, Settings, TrendingUp, BarChart3, FileText, GraduationCap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -182,7 +183,7 @@ const TeacherPortal = () => {
 
       <Tabs defaultValue="assessments" className="w-full animate-bounce-in">
         <div className="overflow-x-auto -mx-3 sm:-mx-4 md:mx-0 px-3 sm:px-4 md:px-0">
-          <TabsList className="inline-flex w-max min-w-full md:w-full md:grid md:grid-cols-4 lg:grid-cols-8 glass-card gap-1">
+          <TabsList className="inline-flex w-max min-w-full md:w-full md:grid md:grid-cols-5 lg:grid-cols-9 glass-card gap-1">
             <TabsTrigger value="assessments" className="flex items-center gap-1 sm:gap-2 transition-all duration-200 hover:scale-105 text-xs sm:text-sm px-2 sm:px-3">
               <ClipboardList className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
               <span>Create</span>
@@ -206,6 +207,10 @@ const TeacherPortal = () => {
             <TabsTrigger value="students" className="flex items-center gap-1 sm:gap-2 transition-all duration-200 hover:scale-105 text-xs sm:text-sm px-2 sm:px-3">
               <Users className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
               <span>Students</span>
+            </TabsTrigger>
+            <TabsTrigger value="all-students" className="flex items-center gap-1 sm:gap-2 transition-all duration-200 hover:scale-105 text-xs sm:text-sm px-2 sm:px-3">
+              <GraduationCap className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+              <span>All Students</span>
             </TabsTrigger>
             <TabsTrigger value="progress" className="flex items-center gap-1 sm:gap-2 transition-all duration-200 hover:scale-105 text-xs sm:text-sm px-2 sm:px-3">
               <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
@@ -240,6 +245,10 @@ const TeacherPortal = () => {
         
         <TabsContent value="students" className="space-y-4 animate-fade-in">
           <ManageStudents />
+        </TabsContent>
+        
+        <TabsContent value="all-students" className="space-y-4 animate-fade-in">
+          <AllStudents />
         </TabsContent>
         
         <TabsContent value="progress" className="space-y-4 animate-fade-in">
