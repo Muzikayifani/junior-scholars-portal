@@ -48,6 +48,7 @@ const ManageClasses = () => {
   const [selectedClass, setSelectedClass] = useState<ClassData | null>(null);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<string>('');
+  const [studentSearch, setStudentSearch] = useState('');
   const [grades, setGrades] = useState<any[]>([]);
   const [editForm, setEditForm] = useState({
     name: '',
@@ -683,18 +684,40 @@ const ManageClasses = () => {
                   All existing students are already enrolled in this class.
                 </p>
               ) : (
-                <Select value={selectedStudent} onValueChange={setSelectedStudent}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a student to add" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background">
-                    {selectedClass && getStudentsNotInClass(selectedClass.id).map((student) => (
-                      <SelectItem key={student.user_id} value={student.user_id}>
-                        {student.full_name} ({student.email})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="space-y-2">
+                  <Input
+                    placeholder="Search students by name or email..."
+                    value={studentSearch}
+                    onChange={(e) => setStudentSearch(e.target.value)}
+                  />
+                  <div className="max-h-40 overflow-y-auto border rounded-md bg-background">
+                    {selectedClass && getStudentsNotInClass(selectedClass.id)
+                      .filter(s => {
+                        const q = studentSearch.toLowerCase();
+                        return !q || s.full_name?.toLowerCase().includes(q) || s.email?.toLowerCase().includes(q);
+                      })
+                      .map((student) => (
+                        <button
+                          key={student.user_id}
+                          type="button"
+                          className={`w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors cursor-pointer ${
+                            selectedStudent === student.user_id ? 'bg-accent font-medium' : ''
+                          }`}
+                          onClick={() => setSelectedStudent(student.user_id)}
+                        >
+                          <p className="font-medium">{student.full_name || 'Unnamed'}</p>
+                          <p className="text-xs text-muted-foreground">{student.email}</p>
+                        </button>
+                      ))}
+                    {selectedClass && getStudentsNotInClass(selectedClass.id)
+                      .filter(s => {
+                        const q = studentSearch.toLowerCase();
+                        return !q || s.full_name?.toLowerCase().includes(q) || s.email?.toLowerCase().includes(q);
+                      }).length === 0 && (
+                      <p className="text-sm text-muted-foreground p-3">No students match your search.</p>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
             <div className="flex gap-2">
@@ -706,7 +729,7 @@ const ManageClasses = () => {
               </Button>
               <Button 
                 variant="outline" 
-                onClick={() => setShowStudentDialog(false)}
+                onClick={() => { setShowStudentDialog(false); setStudentSearch(''); }}
               >
                 Close
               </Button>
