@@ -49,10 +49,10 @@ const ManageStudents = () => {
   }, [profile]);
 
   useEffect(() => {
-    if (selectedClassId) {
+    if (profile) {
       loadLearners();
     }
-  }, [selectedClassId]);
+  }, [selectedClassId, profile]);
 
   const loadData = async () => {
     if (!profile) return;
@@ -67,17 +67,22 @@ const ManageStudents = () => {
   };
 
   const loadLearners = async () => {
-    if (!selectedClassId) return;
+    if (!profile) return;
     
     setLoading(true);
-    const { data, error } = await supabase
+    let query = supabase
       .from('learners')
       .select(`
         *,
         profile:profiles!fk_learners_user_id(full_name, email, first_name, last_name),
         class:classes(name, grade_level)
-      `)
-      .eq('class_id', selectedClassId);
+      `);
+
+    if (selectedClassId) {
+      query = query.eq('class_id', selectedClassId);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       toast({
@@ -426,11 +431,12 @@ const ManageStudents = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="class-filter">Select Class</Label>
-              <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+              <Select value={selectedClassId || 'all'} onValueChange={(val) => setSelectedClassId(val === 'all' ? '' : val)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Choose a class to view students" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="all">All Classes</SelectItem>
                   {classes.map((cls) => (
                     <SelectItem key={cls.id} value={cls.id}>
                       {cls.name} (Grade {cls.grade_level})
@@ -461,11 +467,11 @@ const ManageStudents = () => {
       </Card>
 
       {/* Students Table */}
-      {selectedClassId && (
+      {(
         <Card>
           <CardHeader>
             <CardTitle>
-              Students in {classes.find(c => c.id === selectedClassId)?.name}
+              {selectedClassId ? `Students in ${classes.find(c => c.id === selectedClassId)?.name}` : 'All Students'}
             </CardTitle>
           </CardHeader>
           <CardContent>
