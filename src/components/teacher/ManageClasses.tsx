@@ -402,7 +402,8 @@ const ManageClasses = () => {
                               size="sm"
                               onClick={() => openStudentDialog(classItem)}
                             >
-                              <UserPlus className="h-4 w-4" />
+                              <UserPlus className="h-4 w-4 mr-1" />
+                              Manage Class
                             </Button>
                             <Button
                               variant="destructive"

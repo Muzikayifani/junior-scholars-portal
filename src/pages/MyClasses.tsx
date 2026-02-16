@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { BookOpen, Users, Calendar, Clock, GraduationCap, Plus } from 'lucide-react';
+import { BookOpen, Users, Calendar, Clock, GraduationCap, Plus, UserPlus, UserMinus, Eye, Search } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 interface ClassData {
@@ -37,6 +38,14 @@ export default function MyClasses() {
     school_year: '2024-2025'
   });
 
+  // Enrollment state
+  const [showManageDialog, setShowManageDialog] = useState(false);
+  const [selectedClass, setSelectedClass] = useState<ClassData | null>(null);
+  const [enrolledStudents, setEnrolledStudents] = useState<any[]>([]);
+  const [availableStudents, setAvailableStudents] = useState<any[]>([]);
+  const [studentSearch, setStudentSearch] = useState('');
+  const [selectedStudent, setSelectedStudent] = useState('');
+  const [enrollLoading, setEnrollLoading] = useState(false);
   useEffect(() => {
     if (profile && user) {
       fetchClasses();
@@ -163,6 +172,61 @@ export default function MyClasses() {
     setCreateLoading(false);
   };
 
+  const openManageDialog = async (classItem: ClassData) => {
+    setSelectedClass(classItem);
+    setStudentSearch('');
+    setSelectedStudent('');
+    setShowManageDialog(true);
+
+    // Load enrolled students
+    const { data: enrolled } = await supabase
+      .from('learners')
+      .select('id, user_id, enrollment_date, status, student_number, profiles:profiles!fk_learners_user_id(full_name, email)')
+      .eq('class_id', classItem.id);
+    setEnrolledStudents(enrolled || []);
+
+    // Load all learner profiles
+    const { data: allStudents } = await supabase
+      .from('profiles')
+      .select('id, user_id, full_name, email')
+      .eq('role', 'learner');
+    
+    const enrolledUserIds = (enrolled || []).map((e: any) => e.user_id);
+    setAvailableStudents((allStudents || []).filter((s: any) => !enrolledUserIds.includes(s.user_id)));
+  };
+
+  const handleEnrollStudent = async () => {
+    if (!selectedClass || !selectedStudent) return;
+    setEnrollLoading(true);
+    const { error } = await supabase
+      .from('learners')
+      .insert({ user_id: selectedStudent, class_id: selectedClass.id });
+
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Success", description: "Student enrolled successfully!" });
+      // Refresh dialog data
+      await openManageDialog(selectedClass);
+      fetchClasses();
+    }
+    setEnrollLoading(false);
+  };
+
+  const handleRemoveStudent = async (learnerId: string, name: string) => {
+    if (!confirm(`Remove ${name} from this class?`)) return;
+    setEnrollLoading(true);
+    const { error } = await supabase.from('learners').delete().eq('id', learnerId);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Success", description: `${name} removed.` });
+      if (selectedClass) await openManageDialog(selectedClass);
+      fetchClasses();
+    }
+    setEnrollLoading(false);
+  };
+
   if (authLoading || loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
@@ -277,8 +341,9 @@ export default function MyClasses() {
                   <Button variant="outline" size="sm" className="flex-1">
                     View Details
                   </Button>
-                  {profile?.role === 'teacher' && (
-                    <Button size="sm" className="flex-1 btn-gradient">
+                {profile?.role === 'teacher' && (
+                    <Button size="sm" className="flex-1 btn-gradient" onClick={() => openManageDialog(classItem)}>
+                      <UserPlus className="h-4 w-4 mr-1" />
                       Manage Class
                     </Button>
                   )}
@@ -348,6 +413,102 @@ export default function MyClasses() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Class / Enrollment Dialog */}
+      <Dialog open={showManageDialog} onOpenChange={setShowManageDialog}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Manage Students in {selectedClass?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {enrolledStudents.length > 0 && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Enrolled Students ({enrolledStudents.length})
+                </Label>
+                <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
+                  {enrolledStudents.map((learner: any) => (
+                    <div key={learner.id} className="flex items-center justify-between p-2 bg-muted/50 rounded">
+                      <div className="text-sm flex-1">
+                        <p className="font-medium">{learner.profiles?.full_name || 'Unknown'}</p>
+                        <p className="text-muted-foreground text-xs">{learner.profiles?.email}</p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveStudent(learner.id, learner.profiles?.full_name || 'this student')}
+                        disabled={enrollLoading}
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      >
+                        <UserMinus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {enrolledStudents.length > 0 && <Separator />}
+
+            <div className="space-y-2">
+              <Label>Add Student</Label>
+              {availableStudents.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-2">All students are already enrolled.</p>
+              ) : (
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search students by name or email..."
+                      value={studentSearch}
+                      onChange={(e) => setStudentSearch(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                  <div className="max-h-40 overflow-y-auto border rounded-md bg-background">
+                    {availableStudents
+                      .filter(s => {
+                        const q = studentSearch.toLowerCase();
+                        return !q || s.full_name?.toLowerCase().includes(q) || s.email?.toLowerCase().includes(q);
+                      })
+                      .map((student: any) => (
+                        <button
+                          key={student.user_id}
+                          type="button"
+                          className={`w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors cursor-pointer ${
+                            selectedStudent === student.user_id ? 'bg-accent font-medium' : ''
+                          }`}
+                          onClick={() => setSelectedStudent(student.user_id)}
+                        >
+                          <p className="font-medium">{student.full_name || 'Unnamed'}</p>
+                          <p className="text-xs text-muted-foreground">{student.email}</p>
+                        </button>
+                      ))}
+                    {availableStudents.filter(s => {
+                      const q = studentSearch.toLowerCase();
+                      return !q || s.full_name?.toLowerCase().includes(q) || s.email?.toLowerCase().includes(q);
+                    }).length === 0 && (
+                      <p className="text-sm text-muted-foreground p-3">No students match your search.</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleEnrollStudent} disabled={enrollLoading || !selectedStudent}>
+                {enrollLoading ? "Adding..." : "Add Student"}
+              </Button>
+              <Button variant="outline" onClick={() => setShowManageDialog(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
