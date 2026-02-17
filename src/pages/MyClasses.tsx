@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { BookOpen, Users, Calendar, Clock, GraduationCap, Plus, UserPlus, UserMinus, Eye, Search } from 'lucide-react';
+import { BookOpen, Users, Calendar, Clock, GraduationCap, Plus, UserPlus, UserMinus, Eye, Search, ClipboardList, CalendarClock } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 interface ClassData {
@@ -37,6 +37,16 @@ export default function MyClasses() {
     grade_level: '',
     school_year: '2024-2025'
   });
+
+  // Details state
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [detailsClass, setDetailsClass] = useState<ClassData | null>(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [classDetails, setClassDetails] = useState<{
+    learnerCount: number;
+    upcomingAssessments: any[];
+    nextSchedule: any | null;
+  }>({ learnerCount: 0, upcomingAssessments: [], nextSchedule: null });
 
   // Enrollment state
   const [showManageDialog, setShowManageDialog] = useState(false);
@@ -227,6 +237,56 @@ export default function MyClasses() {
     setEnrollLoading(false);
   };
 
+  const openDetailsDialog = async (classItem: ClassData) => {
+    setDetailsClass(classItem);
+    setShowDetailsDialog(true);
+    setDetailsLoading(true);
+
+    try {
+      // Get learner count
+      const { count } = await supabase
+        .from('learners')
+        .select('*', { count: 'exact', head: true })
+        .eq('class_id', classItem.id);
+
+      // Get upcoming assessments
+      const { data: assessments } = await supabase
+        .from('assessments')
+        .select('id, title, type, due_date, total_marks, is_published')
+        .eq('class_id', classItem.id)
+        .gte('due_date', new Date().toISOString())
+        .order('due_date', { ascending: true })
+        .limit(5);
+
+      // Get next scheduled class
+      const today = new Date().getDay(); // 0=Sun
+      const { data: schedules } = await supabase
+        .from('class_schedule')
+        .select('day_of_week, start_time, end_time, room, subjects(name)')
+        .eq('class_id', classItem.id)
+        .order('day_of_week', { ascending: true });
+
+      // Find next upcoming schedule entry
+      let nextSchedule = null;
+      if (schedules && schedules.length > 0) {
+        const upcoming = schedules.find(s => s.day_of_week >= today) || schedules[0];
+        nextSchedule = upcoming;
+      }
+
+      setClassDetails({
+        learnerCount: count || 0,
+        upcomingAssessments: assessments || [],
+        nextSchedule,
+      });
+    } catch (error) {
+      console.error('Error loading class details:', error);
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
   if (authLoading || loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
@@ -338,7 +398,8 @@ export default function MyClasses() {
                 )}
                 
                 <div className="flex gap-2 pt-2">
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => openDetailsDialog(classItem)}>
+                    <Eye className="h-4 w-4 mr-1" />
                     View Details
                   </Button>
                 {profile?.role === 'teacher' && (
@@ -509,6 +570,87 @@ export default function MyClasses() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Class Details Dialog */}
+      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5" />
+              {detailsClass?.name} — Details
+            </DialogTitle>
+          </DialogHeader>
+          {detailsLoading ? (
+            <div className="flex justify-center py-8"><LoadingSpinner /></div>
+          ) : (
+            <div className="space-y-5">
+              {/* Learner count */}
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                <Users className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Enrolled Learners</p>
+                  <p className="text-lg font-semibold">{classDetails.learnerCount}</p>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Upcoming assessments */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <ClipboardList className="h-4 w-4" />
+                  Upcoming Assessments
+                </Label>
+                {classDetails.upcomingAssessments.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-2">No upcoming assessments.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {classDetails.upcomingAssessments.map((a) => (
+                      <div key={a.id} className="flex items-center justify-between p-2 rounded bg-muted/50">
+                        <div className="text-sm">
+                          <p className="font-medium">{a.title}</p>
+                          <p className="text-muted-foreground text-xs">{a.type} · {a.total_marks} marks</p>
+                        </div>
+                        <Badge variant={a.is_published ? 'default' : 'secondary'} className="text-xs">
+                          {a.due_date ? new Date(a.due_date).toLocaleDateString() : 'No date'}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <Separator />
+
+              {/* Next class */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <CalendarClock className="h-4 w-4" />
+                  Next Scheduled Class
+                </Label>
+                {classDetails.nextSchedule ? (
+                  <div className="p-3 rounded-lg bg-muted/50 space-y-1">
+                    <p className="text-sm font-medium">
+                      {dayNames[classDetails.nextSchedule.day_of_week]}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {classDetails.nextSchedule.start_time?.slice(0, 5)} – {classDetails.nextSchedule.end_time?.slice(0, 5)}
+                    </p>
+                    {classDetails.nextSchedule.room && (
+                      <p className="text-xs text-muted-foreground">Room: {classDetails.nextSchedule.room}</p>
+                    )}
+                    {classDetails.nextSchedule.subjects?.name && (
+                      <Badge variant="outline" className="text-xs mt-1">{classDetails.nextSchedule.subjects.name}</Badge>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground py-2">No scheduled classes.</p>
+                )}
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
