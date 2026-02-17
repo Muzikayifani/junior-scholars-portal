@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 // South African CAPS subjects by phase
@@ -61,13 +61,14 @@ function getPhase(grade: number): string {
   return "fet";
 }
 
-function makeCode(name: string): string {
-  return name
+function makeCode(name: string, index: number): string {
+  const base = name
     .split(" ")
     .map((w) => w[0])
     .join("")
     .toUpperCase()
-    .slice(0, 5);
+    .slice(0, 4);
+  return `${base}${index}`;
 }
 
 // Schedule: spread subjects across Mon-Fri, 08:00-14:00 in 45-min slots
@@ -176,9 +177,9 @@ serve(async (req) => {
     const allSubjectNames = new Set<string>();
     Object.values(SA_SUBJECTS).forEach((list) => list.forEach((s) => allSubjectNames.add(s)));
 
-    const subjectRows = [...allSubjectNames].map((name) => ({
+    const subjectRows = [...allSubjectNames].map((name, i) => ({
       name,
-      code: makeCode(name),
+      code: makeCode(name, i),
     }));
 
     const { data: subjectsData, error: subErr } = await supabase
