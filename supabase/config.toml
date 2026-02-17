@@ -8,3 +8,6 @@ verify_jwt = true
 
 [functions.seed-test-users]
 verify_jwt = false
+
+[functions.seed-sa-data]
+verify_jwt = false
