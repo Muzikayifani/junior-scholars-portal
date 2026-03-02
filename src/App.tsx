@@ -9,20 +9,29 @@ import { lazy, Suspense } from "react";
 import Layout from "./components/Layout";
 import LoadingSpinner from "./components/LoadingSpinner";
 
-const Index = lazy(() => import("./pages/Index"));
-const Auth = lazy(() => import("./pages/Auth"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Settings = lazy(() => import("./pages/Settings"));
-const MyClasses = lazy(() => import("./pages/MyClasses"));
-const Assignments = lazy(() => import("./pages/Assignments"));
-const Assessments = lazy(() => import("./pages/Assessments"));
-const Results = lazy(() => import("./pages/Results"));
-const Schedule = lazy(() => import("./pages/Schedule"));
-const TeacherPortal = lazy(() => import("./components/teacher/TeacherPortal"));
-const NotFound = lazy(() => import("./pages/NotFound"));
-const Communication = lazy(() => import("./pages/Communication"));
-const Children = lazy(() => import("./pages/Children"));
-const ProgressReports = lazy(() => import("./pages/ProgressReports"));
+const lazyRetry = (importFn: () => Promise<any>) =>
+  lazy(() =>
+    importFn().catch(() => {
+      // Force reload on chunk load failure (stale cache)
+      window.location.reload();
+      return new Promise(() => {}); // never resolves, page will reload
+    })
+  );
+
+const Index = lazyRetry(() => import("./pages/Index"));
+const Auth = lazyRetry(() => import("./pages/Auth"));
+const Dashboard = lazyRetry(() => import("./pages/Dashboard"));
+const Settings = lazyRetry(() => import("./pages/Settings"));
+const MyClasses = lazyRetry(() => import("./pages/MyClasses"));
+const Assignments = lazyRetry(() => import("./pages/Assignments"));
+const Assessments = lazyRetry(() => import("./pages/Assessments"));
+const Results = lazyRetry(() => import("./pages/Results"));
+const Schedule = lazyRetry(() => import("./pages/Schedule"));
+const TeacherPortal = lazyRetry(() => import("./components/teacher/TeacherPortal"));
+const NotFound = lazyRetry(() => import("./pages/NotFound"));
+const Communication = lazyRetry(() => import("./pages/Communication"));
+const Children = lazyRetry(() => import("./pages/Children"));
+const ProgressReports = lazyRetry(() => import("./pages/ProgressReports"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
