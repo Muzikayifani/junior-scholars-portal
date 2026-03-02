@@ -310,14 +310,15 @@ const Communication: React.FC = () => {
         threadSubject = `Message to ${learner.full_name}`;
       }
 
-      // Create thread
-      const { data: thread, error: threadErr } = await supabase
+      // Create thread with client-generated ID
+      const threadId = crypto.randomUUID();
+      const { error: threadErr } = await supabase
         .from("message_threads")
-        .insert({ subject: threadSubject })
-        .select("id, subject, last_message_at")
-        .single();
+        .insert({ id: threadId, subject: threadSubject });
 
       if (threadErr) throw threadErr;
+
+      const thread = { id: threadId, subject: threadSubject, last_message_at: new Date().toISOString() };
 
       // Add participants
       const { error: partErr } = await supabase
@@ -383,14 +384,16 @@ const Communication: React.FC = () => {
         .eq("user_id", selectedChild)
         .single();
 
-      // Create thread
-      const { data: thread, error: threadErr } = await supabase
+      // Create thread with client-generated ID
+      const threadId = crypto.randomUUID();
+      const threadSubject = `Regarding: ${childProfile?.full_name || "My Child"}`;
+      const { error: threadErr } = await supabase
         .from("message_threads")
-        .insert({ subject: `Regarding: ${childProfile?.full_name || "My Child"}` })
-        .select("id, subject, last_message_at")
-        .single();
+        .insert({ id: threadId, subject: threadSubject });
 
       if (threadErr) throw threadErr;
+
+      const thread = { id: threadId, subject: threadSubject, last_message_at: new Date().toISOString() };
 
       // Add participants
       const { error: partErr } = await supabase
@@ -429,14 +432,16 @@ const Communication: React.FC = () => {
         .eq("user_id", selectedTeacher)
         .single();
 
-      // Create thread
-      const { data: thread, error: threadErr } = await supabase
+      // Create thread with client-generated ID
+      const threadId = crypto.randomUUID();
+      const threadSubject = `Message to ${teacherProfile?.full_name || "Teacher"}`;
+      const { error: threadErr } = await supabase
         .from("message_threads")
-        .insert({ subject: `Message to ${teacherProfile?.full_name || "Teacher"}` })
-        .select("id, subject, last_message_at")
-        .single();
+        .insert({ id: threadId, subject: threadSubject });
 
       if (threadErr) throw threadErr;
+
+      const thread = { id: threadId, subject: threadSubject, last_message_at: new Date().toISOString() };
 
       // Add participants
       const { error: partErr } = await supabase
