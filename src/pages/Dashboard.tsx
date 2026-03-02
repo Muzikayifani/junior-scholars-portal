@@ -49,6 +49,12 @@ const LearnerDashboard = () => {
         const classIds = enrolledClasses?.map(e => e.class_id) || [];
         const activeClasses = classIds.length;
 
+        if (classIds.length === 0) {
+          setStats({ activeClasses: 0, pendingAssignments: 0, averageGrade: 0, nextClass: null });
+          setLoading(false);
+          return;
+        }
+
         // Fetch pending assignments (assessments not yet submitted)
         const { data: pendingAssessments, error: assessmentsError } = await supabase
           .from('assessments')
@@ -70,6 +76,12 @@ const LearnerDashboard = () => {
 
         if (learnerError) throw learnerError;
         const learnerIdsList = learnerIds?.map(l => l.id) || [];
+
+        if (learnerIdsList.length === 0) {
+          setStats({ activeClasses, pendingAssignments: 0, averageGrade: 0, nextClass: null });
+          setLoading(false);
+          return;
+        }
 
         // Filter pending (no result or status is pending)
         const pending = pendingAssessments?.filter(a => {
@@ -363,6 +375,14 @@ const ParentDashboard = () => {
 
         const learnerIds = learnerRecords?.map(l => l.id) || [];
         const classIds = learnerRecords?.map(l => l.class_id) || [];
+
+        if (learnerIds.length === 0 || classIds.length === 0) {
+          setStats({ childrenCount, totalPendingTasks: 0, averagePerformance: 0, upcomingEvents: 0 });
+          setChildrenData([]);
+          setRecentActivity([]);
+          setLoading(false);
+          return;
+        }
 
         // Fetch pending assessments
         const { data: assessments, error: assessmentsError } = await supabase
