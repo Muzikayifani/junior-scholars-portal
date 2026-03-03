@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import CreateAssessment from './CreateAssessment';
@@ -11,7 +12,7 @@ import GradeAnalytics from './GradeAnalytics';
 import TeacherReports from './TeacherReports';
 import StudentProgressTracking from './StudentProgressTracking';
 import AllStudents from './AllStudents';
-import { BookOpen, Calendar, ClipboardList, Users, Award, Settings, TrendingUp, BarChart3, FileText, GraduationCap } from 'lucide-react';
+import { BookOpen, Calendar, ClipboardList, Users, Award, Settings, TrendingUp, BarChart3, FileText, GraduationCap, Sparkles, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -101,6 +102,63 @@ const TeacherPortal = () => {
 
     fetchTeacherStats();
   }, [profile]);
+
+  if (!loading && stats.classesCount === 0 && stats.studentsCount === 0) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="animate-slide-up">
+          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">Welcome, {profile?.first_name || 'Teacher'}! 📚</h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-1">Set up your first class to get started.</p>
+        </div>
+        <Card className="glass-card border-dashed border-2 border-primary/20 bg-gradient-to-br from-primary/10 to-success/10 animate-scale-in">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <div className="p-2 rounded-full bg-primary/10">
+                <Sparkles className="h-5 w-5 text-primary" />
+              </div>
+              Getting Started
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {[
+              'Create a class and add subjects',
+              'Enroll your students',
+              'Create assessments and start grading',
+            ].map((step, i) => (
+              <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-background/60 backdrop-blur-sm">
+                <div className="flex items-center justify-center h-6 w-6 rounded-full bg-muted text-muted-foreground text-xs font-bold shrink-0 mt-0.5">
+                  {i + 1}
+                </div>
+                <p className="text-sm">{step}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Tabs defaultValue="students" className="w-full animate-bounce-in">
+          <div className="overflow-x-auto -mx-3 sm:-mx-4 md:mx-0 px-3 sm:px-4 md:px-0">
+            <TabsList className="inline-flex w-max min-w-full md:w-full md:grid md:grid-cols-3 glass-card gap-1">
+              <TabsTrigger value="students" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3">
+                <Users className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                <span>Students</span>
+              </TabsTrigger>
+              <TabsTrigger value="assessments" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3">
+                <ClipboardList className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                <span>Create Assessment</span>
+              </TabsTrigger>
+              <TabsTrigger value="schedule" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3">
+                <Calendar className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                <span>Schedule</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
+          <TabsContent value="students" className="space-y-4 animate-fade-in"><ManageStudents /></TabsContent>
+          <TabsContent value="assessments" className="space-y-4 animate-fade-in"><CreateAssessment onAssessmentCreated={handleAssessmentCreated} /></TabsContent>
+          <TabsContent value="schedule" className="space-y-4 animate-fade-in"><ClassSchedule /></TabsContent>
+        </Tabs>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6 animate-fade-in">

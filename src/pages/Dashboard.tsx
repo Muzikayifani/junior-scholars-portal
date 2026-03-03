@@ -10,7 +10,11 @@ import {
   Calendar,
   TrendingUp,
   Clock,
-  CheckCircle
+  CheckCircle,
+  Sparkles,
+  GraduationCap,
+  Heart,
+  ArrowRight
 } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,6 +23,98 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useNavigate } from 'react-router-dom';
+
+interface WelcomeOnboardingProps {
+  role: 'learner' | 'parent' | 'teacher';
+  firstName?: string | null;
+}
+
+const WelcomeOnboarding = ({ role, firstName }: WelcomeOnboardingProps) => {
+  const navigate = useNavigate();
+  const name = firstName || 'there';
+
+  const config = {
+    learner: {
+      icon: GraduationCap,
+      title: `Welcome, ${name}! 🎓`,
+      subtitle: "You're all set up — now let's get you into a class!",
+      steps: [
+        { text: 'Your teacher will enroll you in a class', done: false },
+        { text: 'Once enrolled, your assignments and schedule will appear here', done: false },
+        { text: 'Check back soon or ask your teacher for help', done: false },
+      ],
+      cta: { label: 'View My Classes', path: '/my-classes' },
+      gradient: 'from-primary/10 to-accent/10',
+    },
+    parent: {
+      icon: Heart,
+      title: `Welcome, ${name}! 💛`,
+      subtitle: "Let's connect you with your child's learning journey.",
+      steps: [
+        { text: 'Ask your child\'s teacher to link your account', done: false },
+        { text: 'Once linked, you\'ll see grades, assignments, and progress here', done: false },
+        { text: 'You can also message teachers directly', done: false },
+      ],
+      cta: { label: 'View Children', path: '/children' },
+      gradient: 'from-primary/10 to-info/10',
+    },
+    teacher: {
+      icon: BookOpen,
+      title: `Welcome, ${name}! 📚`,
+      subtitle: 'Set up your first class to get started.',
+      steps: [
+        { text: 'Create a class and add subjects', done: false },
+        { text: 'Enroll your students', done: false },
+        { text: 'Create assessments and start grading', done: false },
+      ],
+      cta: { label: 'Go to Teacher Portal', path: '/assessments' },
+      gradient: 'from-primary/10 to-success/10',
+    },
+  };
+
+  const c = config[role];
+  const Icon = c.icon;
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div className="animate-slide-up">
+        <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">{c.title}</h1>
+        <p className="text-sm sm:text-base text-muted-foreground mt-1">{c.subtitle}</p>
+      </div>
+
+      <Card className={`glass-card border-dashed border-2 border-primary/20 bg-gradient-to-br ${c.gradient} animate-scale-in`}>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <div className="p-2 rounded-full bg-primary/10">
+              <Sparkles className="h-5 w-5 text-primary" />
+            </div>
+            Getting Started
+          </CardTitle>
+          <CardDescription>Here's what happens next:</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {c.steps.map((step, i) => (
+            <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-background/60 backdrop-blur-sm">
+              <div className="flex items-center justify-center h-6 w-6 rounded-full bg-muted text-muted-foreground text-xs font-bold shrink-0 mt-0.5">
+                {i + 1}
+              </div>
+              <p className="text-sm">{step.text}</p>
+            </div>
+          ))}
+
+          <button
+            onClick={() => navigate(c.cta.path)}
+            className="mt-4 w-full flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground py-3 px-4 text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            {c.cta.label}
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
 
 const LearnerDashboard = () => {
   const { profile } = useAuth();
@@ -32,6 +128,7 @@ const LearnerDashboard = () => {
   const [recentAssignments, setRecentAssignments] = useState<any[]>([]);
   const [recentGrades, setRecentGrades] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasNoData, setHasNoData] = useState(false);
 
   const fetchLearnerData = useCallback(async () => {
     if (!profile?.user_id) return;
@@ -51,6 +148,7 @@ const LearnerDashboard = () => {
 
         if (classIds.length === 0) {
           setStats({ activeClasses: 0, pendingAssignments: 0, averageGrade: 0, nextClass: null });
+          setHasNoData(true);
           setLoading(false);
           return;
         }
@@ -191,6 +289,10 @@ const LearnerDashboard = () => {
     );
   }
 
+  if (hasNoData) {
+    return <WelcomeOnboarding role="learner" firstName={profile?.first_name} />;
+  }
+
   const content = (
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
       <div className="animate-slide-up">
@@ -326,6 +428,7 @@ const ParentDashboard = () => {
   const { profile } = useAuth();
   const isMobile = useIsMobile();
   const [loading, setLoading] = useState(true);
+  const [hasNoData, setHasNoData] = useState(false);
   const [stats, setStats] = useState({
     childrenCount: 0,
     totalPendingTasks: 0,
@@ -352,6 +455,7 @@ const ParentDashboard = () => {
 
         if (childUserIds.length === 0) {
           setStats({ childrenCount: 0, totalPendingTasks: 0, averagePerformance: 0, upcomingEvents: 0 });
+          setHasNoData(true);
           setLoading(false);
           return;
         }
@@ -530,6 +634,10 @@ const ParentDashboard = () => {
         <LoadingSpinner text="Loading dashboard..." />
       </div>
     );
+  }
+
+  if (hasNoData) {
+    return <WelcomeOnboarding role="parent" firstName={profile?.first_name} />;
   }
 
   const content = (
