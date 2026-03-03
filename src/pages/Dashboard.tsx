@@ -10,7 +10,6 @@ import {
   Calendar,
   TrendingUp,
   Clock,
-  CheckCircle,
   Sparkles,
   GraduationCap,
   Heart,

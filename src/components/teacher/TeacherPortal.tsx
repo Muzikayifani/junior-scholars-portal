@@ -1,5 +1,4 @@
-import { useState, useEffect, lazy } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import CreateAssessment from './CreateAssessment';
@@ -12,7 +11,7 @@ import GradeAnalytics from './GradeAnalytics';
 import TeacherReports from './TeacherReports';
 import StudentProgressTracking from './StudentProgressTracking';
 import AllStudents from './AllStudents';
-import { BookOpen, Calendar, ClipboardList, Users, Award, Settings, TrendingUp, BarChart3, FileText, GraduationCap, Sparkles, ArrowRight } from 'lucide-react';
+import { BookOpen, Calendar, ClipboardList, Users, Award, TrendingUp, BarChart3, FileText, GraduationCap, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import LoadingSpinner from '@/components/LoadingSpinner';
