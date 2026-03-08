@@ -102,6 +102,15 @@ const AdminDashboard = () => {
   const [newClassCapacity, setNewClassCapacity] = useState('30');
   const [newClassTeacher, setNewClassTeacher] = useState('');
 
+  // Edit user form
+  const [editUserDialog, setEditUserDialog] = useState(false);
+  const [editUserId, setEditUserId] = useState('');
+  const [editFirstName, setEditFirstName] = useState('');
+  const [editLastName, setEditLastName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editPassword, setEditPassword] = useState('');
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
