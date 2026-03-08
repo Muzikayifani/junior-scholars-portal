@@ -279,6 +279,14 @@ const TeacherPortal = () => {
               <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
               <span>Reports</span>
             </TabsTrigger>
+            <TabsTrigger value="attendance" className="flex items-center gap-1 sm:gap-2 transition-all duration-200 hover:scale-105 text-xs sm:text-sm px-2 sm:px-3">
+              <CheckSquare className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+              <span>Attendance</span>
+            </TabsTrigger>
+            <TabsTrigger value="announcements" className="flex items-center gap-1 sm:gap-2 transition-all duration-200 hover:scale-105 text-xs sm:text-sm px-2 sm:px-3">
+              <Megaphone className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+              <span>Announce</span>
+            </TabsTrigger>
           </TabsList>
         </div>
         
@@ -316,6 +324,14 @@ const TeacherPortal = () => {
         
         <TabsContent value="reports" className="space-y-4 animate-fade-in">
           <TeacherReports />
+        </TabsContent>
+        
+        <TabsContent value="attendance" className="space-y-4 animate-fade-in">
+          <AttendanceMarking />
+        </TabsContent>
+        
+        <TabsContent value="announcements" className="space-y-4 animate-fade-in">
+          <AnnouncementCompose />
         </TabsContent>
       </Tabs>
     </div>
