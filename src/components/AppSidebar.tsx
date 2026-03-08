@@ -1,5 +1,6 @@
 import { useLocation } from 'react-router-dom';
 import { NavLink } from 'react-router-dom';
+import schoolLogo from '@/assets/school_logo.png';
 import {
   Sidebar,
   SidebarContent,
