@@ -155,6 +155,29 @@ const GradeManagement = () => {
     });
   };
 
+  const handleDownloadSubmission = async (submissionPath: string) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('submissions')
+        .download(submissionPath);
+
+      if (error) throw error;
+
+      const url = window.URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = submissionPath.split('/').pop() || 'submission';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({ title: "Download started", description: "File is being downloaded." });
+    } catch (error: any) {
+      toast({ title: "Download failed", description: error.message, variant: "destructive" });
+    }
+  };
+
   const selectedAssessmentData = assessments.find(a => a.id === selectedAssessment);
 
   return (
