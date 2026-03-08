@@ -65,6 +65,7 @@ const AdminDashboard = () => {
   const [linkParentDialog, setLinkParentDialog] = useState(false);
   const [feeDialog, setFeeDialog] = useState(false);
   const [createUserDialog, setCreateUserDialog] = useState(false);
+  const [createClassDialog, setCreateClassDialog] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   // Assign to class form
