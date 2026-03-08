@@ -35,6 +35,7 @@ interface StudentInfo {
 
 const FeeTracker = () => {
   const { profile } = useAuth();
+  const isAdmin = profile?.role === 'admin';
   const isTeacher = profile?.role === 'teacher';
   const [fees, setFees] = useState<Fee[]>([]);
   const [loading, setLoading] = useState(true);
