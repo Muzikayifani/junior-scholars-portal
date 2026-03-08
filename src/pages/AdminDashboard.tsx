@@ -318,7 +318,79 @@ const AdminDashboard = () => {
     }
   };
 
-  // Create new user via edge function
+  // Open edit fee dialog
+  const openEditFee = (fee: FeeRecord) => {
+    setEditFeeId(fee.id);
+    setEditFeeStudent(fee.learner_user_id);
+    setEditFeeTitle(fee.title);
+    setEditFeeDescription(fee.description || '');
+    setEditFeeAmount(String(fee.amount));
+    setEditFeeDueDate(fee.due_date);
+    setEditFeeStatus(fee.status);
+    setEditFeeDialog(true);
+  };
+
+  // Update fee
+  const handleUpdateFee = async () => {
+    if (!editFeeTitle || !editFeeAmount || !editFeeDueDate || !editFeeStudent) {
+      toast.error('Fill in all required fields');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const updateData: Record<string, any> = {
+        learner_user_id: editFeeStudent,
+        title: editFeeTitle,
+        description: editFeeDescription || null,
+        amount: parseFloat(editFeeAmount),
+        due_date: editFeeDueDate,
+        status: editFeeStatus,
+      };
+      if (editFeeStatus === 'paid') {
+        const existingFee = allFees.find(f => f.id === editFeeId);
+        if (!existingFee?.paid_at) {
+          updateData.paid_at = new Date().toISOString();
+        }
+      } else {
+        updateData.paid_at = null;
+      }
+      const { error } = await supabase.from('fees').update(updateData).eq('id', editFeeId);
+      if (error) throw error;
+      toast.success('Fee updated');
+      setEditFeeDialog(false);
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update fee');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Delete fee
+  const handleDeleteFee = async (feeId: string) => {
+    try {
+      const { error } = await supabase.from('fees').delete().eq('id', feeId);
+      if (error) throw error;
+      toast.success('Fee deleted');
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete fee');
+    }
+  };
+
+  // Mark fee as paid
+  const handleMarkFeePaid = async (feeId: string) => {
+    try {
+      const { error } = await supabase.from('fees').update({ status: 'paid', paid_at: new Date().toISOString() }).eq('id', feeId);
+      if (error) throw error;
+      toast.success('Fee marked as paid');
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update');
+    }
+  };
+
+
   const handleCreateUser = async () => {
     if (!newUserEmail || !newUserPassword || !newUserFirstName || !newUserLastName || !newUserRole) {
       toast.error('Fill in all required fields');
