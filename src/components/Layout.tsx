@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { LogOut, User } from 'lucide-react';
 import { NotificationCenter } from '@/components/NotificationCenter';
 import { GlobalSearch } from '@/components/GlobalSearch';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { useIsMobile } from '@/hooks/use-mobile';
 
