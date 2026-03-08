@@ -256,7 +256,7 @@ const LearnerDashboard = () => {
         })));
 
         // Set recent grades
-        setRecentGrades(resultsData?.slice(0, 3).map((r: any) => ({
+        setRecentGrades(resultsData?.filter((r: any) => r.assessment != null).slice(0, 3).map((r: any) => ({
           id: r.id,
           title: r.assessment.title,
           percentage: Math.round((r.marks_obtained / r.assessment.total_marks) * 100),
