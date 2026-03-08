@@ -22,8 +22,8 @@ const Index = () => {
           </div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 px-2">E-School Portal</h1>
           <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-6 sm:mb-8 px-4">
-            A comprehensive learning management system designed for primary school learners, 
-            parents, and teachers to track academic progress and manage educational activities.
+            A comprehensive learning management system designed for Learners, 
+            Parents, and Teachers to track academic progress and manage educational activities.
           </p>
           <Button size="lg" asChild className="w-full sm:w-auto max-w-xs">
             <a href="/auth">Get Started</a>
