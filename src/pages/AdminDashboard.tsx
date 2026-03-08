@@ -712,6 +712,9 @@ const AdminDashboard = () => {
               <Input placeholder="Search users..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10" />
             </div>
             <Badge variant="outline">{filteredUsers.length} users</Badge>
+            <Button variant="outline" onClick={() => { setBulkAddDialog(true); setBulkResults([]); setBulkLearners([{ firstName: '', lastName: '', email: '' }]); setBulkClassId(''); }}>
+              <Upload className="h-4 w-4 mr-2" />Bulk Add Learners
+            </Button>
             <Dialog open={createUserDialog} onOpenChange={setCreateUserDialog}>
               <DialogTrigger asChild>
                 <Button><UserPlus className="h-4 w-4 mr-2" />Create User</Button>
