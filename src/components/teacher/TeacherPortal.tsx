@@ -11,7 +11,9 @@ import GradeAnalytics from './GradeAnalytics';
 import TeacherReports from './TeacherReports';
 import StudentProgressTracking from './StudentProgressTracking';
 import AllStudents from './AllStudents';
-import { BookOpen, Calendar, ClipboardList, Users, Award, TrendingUp, BarChart3, FileText, GraduationCap, Sparkles } from 'lucide-react';
+import AttendanceMarking from './AttendanceMarking';
+import AnnouncementCompose from './AnnouncementCompose';
+import { BookOpen, Calendar, ClipboardList, Users, Award, TrendingUp, BarChart3, FileText, GraduationCap, Sparkles, CheckSquare, Megaphone } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -240,7 +242,7 @@ const TeacherPortal = () => {
 
       <Tabs defaultValue="assessments" className="w-full animate-bounce-in">
         <div className="overflow-x-auto -mx-3 sm:-mx-4 md:mx-0 px-3 sm:px-4 md:px-0">
-          <TabsList className="inline-flex w-max min-w-full md:w-full md:grid md:grid-cols-5 lg:grid-cols-9 glass-card gap-1">
+          <TabsList className="inline-flex w-max min-w-full md:w-full md:grid md:grid-cols-5 lg:grid-cols-11 glass-card gap-1">
             <TabsTrigger value="assessments" className="flex items-center gap-1 sm:gap-2 transition-all duration-200 hover:scale-105 text-xs sm:text-sm px-2 sm:px-3">
               <ClipboardList className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
               <span>Create</span>
@@ -276,6 +278,14 @@ const TeacherPortal = () => {
             <TabsTrigger value="reports" className="flex items-center gap-1 sm:gap-2 transition-all duration-200 hover:scale-105 text-xs sm:text-sm px-2 sm:px-3">
               <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
               <span>Reports</span>
+            </TabsTrigger>
+            <TabsTrigger value="attendance" className="flex items-center gap-1 sm:gap-2 transition-all duration-200 hover:scale-105 text-xs sm:text-sm px-2 sm:px-3">
+              <CheckSquare className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+              <span>Attendance</span>
+            </TabsTrigger>
+            <TabsTrigger value="announcements" className="flex items-center gap-1 sm:gap-2 transition-all duration-200 hover:scale-105 text-xs sm:text-sm px-2 sm:px-3">
+              <Megaphone className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+              <span>Announce</span>
             </TabsTrigger>
           </TabsList>
         </div>
@@ -314,6 +324,14 @@ const TeacherPortal = () => {
         
         <TabsContent value="reports" className="space-y-4 animate-fade-in">
           <TeacherReports />
+        </TabsContent>
+        
+        <TabsContent value="attendance" className="space-y-4 animate-fade-in">
+          <AttendanceMarking />
+        </TabsContent>
+        
+        <TabsContent value="announcements" className="space-y-4 animate-fade-in">
+          <AnnouncementCompose />
         </TabsContent>
       </Tabs>
     </div>

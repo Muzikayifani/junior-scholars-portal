@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      announcements: {
+        Row: {
+          class_id: string | null
+          content: string
+          created_at: string
+          id: string
+          is_published: boolean
+          priority: string
+          teacher_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          class_id?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          priority?: string
+          teacher_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          priority?: string
+          teacher_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcements_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assessments: {
         Row: {
           "Assessment type": string | null
@@ -76,6 +120,57 @@ export type Database = {
             columns: ["subject_id"]
             isOneToOne: false
             referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance: {
+        Row: {
+          class_id: string
+          created_at: string
+          date: string
+          id: string
+          learner_id: string
+          marked_by: string
+          notes: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          date?: string
+          id?: string
+          learner_id: string
+          marked_by: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          date?: string
+          id?: string
+          learner_id?: string
+          marked_by?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_learner_id_fkey"
+            columns: ["learner_id"]
+            isOneToOne: false
+            referencedRelation: "learners"
             referencedColumns: ["id"]
           },
         ]
@@ -578,6 +673,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      child_has_result_for_assessment: {
+        Args: { target_assessment_id: string }
+        Returns: boolean
+      }
       class_belongs_to_teacher: {
         Args: { target_learner_id: string }
         Returns: boolean
@@ -600,6 +699,10 @@ export type Database = {
       }
       is_parent: { Args: never; Returns: boolean }
       is_teacher: { Args: never; Returns: boolean }
+      learner_has_result_for_assessment: {
+        Args: { target_assessment_id: string }
+        Returns: boolean
+      }
       user_is_enrolled_in_class: {
         Args: { target_class_id: string }
         Returns: boolean

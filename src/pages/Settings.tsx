@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,94 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Settings as SettingsIcon, Bell, Eye, Lock } from 'lucide-react';
 import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
+
+function PasswordChangeCard() {
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isChanging, setIsChanging] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword.length < 6) {
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      return;
+    }
+    setIsChanging(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setShowForm(false);
+    } catch (error: any) {
+      console.error('Password change error:', error);
+    } finally {
+      setIsChanging(false);
+    }
+  };
+
+  return (
+    <Card className="hover-lift">
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <Lock className="h-5 w-5 text-primary" />
+          <CardTitle>Security</CardTitle>
+        </div>
+        <CardDescription>Manage your account security settings.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {!showForm ? (
+          <Button variant="outline" onClick={() => setShowForm(true)}>
+            Change Password
+          </Button>
+        ) : (
+          <form onSubmit={handlePasswordChange} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">New Password</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                placeholder="Enter new password (min 6 characters)"
+                required
+                minLength={6}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirm New Password</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                placeholder="Confirm new password"
+                required
+                minLength={6}
+              />
+              {confirmPassword && newPassword !== confirmPassword && (
+                <p className="text-sm text-destructive">Passwords do not match</p>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button type="submit" disabled={isChanging || newPassword !== confirmPassword || newPassword.length < 6} className="btn-gradient">
+                {isChanging ? 'Changing...' : 'Update Password'}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => { setShowForm(false); setNewPassword(''); setConfirmPassword(''); }}>
+                Cancel
+              </Button>
+            </div>
+          </form>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function Settings() {
   const { profile, user, loading } = useAuth();
@@ -247,34 +335,7 @@ export default function Settings() {
       </Card>
 
       {/* Security Settings */}
-      <Card className="hover-lift">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Lock className="h-5 w-5 text-primary" />
-            <CardTitle>Security</CardTitle>
-          </div>
-          <CardDescription>
-            Manage your account security settings.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Button variant="outline" className="w-full md:w-auto">
-            Change Password
-          </Button>
-          
-          <Separator />
-          
-          <div className="space-y-2">
-            <Label>Two-Factor Authentication</Label>
-            <p className="text-sm text-muted-foreground">
-              Add an extra layer of security to your account
-            </p>
-            <Button variant="outline" className="w-full md:w-auto">
-              Enable 2FA
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <PasswordChangeCard />
     </div>
   );
 }
