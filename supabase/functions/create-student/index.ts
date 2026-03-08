@@ -155,7 +155,8 @@ Deno.serve(async (req) => {
         data: {
           userId: newUserId,
           learnerId: newLearner.id,
-          tempPassword // Return this so teacher can give it to student
+          studentNumber: newLearner.student_number,
+          tempPassword
         }
       }),
       {
