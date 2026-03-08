@@ -34,12 +34,12 @@ const Index = () => {
           <Card className="group cursor-pointer transition-all duration-300 hover:shadow-[0_0_20px_hsl(var(--orange-glow)/0.4)] hover:border-[hsl(var(--orange-glow))] hover:scale-105 relative overflow-hidden">
             {/* Animated sticks behind content */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
-              <div className="absolute w-1 h-16 bg-primary/10 rounded-full animate-[float-stick-1_4s_ease-in-out_infinite] top-2 left-4 rotate-12" />
-              <div className="absolute w-1.5 h-20 bg-primary/8 rounded-full animate-[float-stick-2_5s_ease-in-out_infinite] top-8 right-6 -rotate-15" />
-              <div className="absolute w-1 h-14 bg-primary/10 rounded-full animate-[float-stick-3_3.5s_ease-in-out_infinite] bottom-4 left-1/3 rotate-45" />
-              <div className="absolute w-1 h-12 bg-primary/6 rounded-full animate-[float-stick-1_4.5s_ease-in-out_infinite_0.5s] top-1/2 right-1/4 -rotate-30" />
-              <div className="absolute w-1.5 h-18 bg-primary/8 rounded-full animate-[float-stick-2_3.8s_ease-in-out_infinite_1s] bottom-8 right-10 rotate-20" />
-              <div className="absolute w-1 h-10 bg-primary/10 rounded-full animate-[float-stick-3_4.2s_ease-in-out_infinite_0.7s] top-4 left-1/2 -rotate-45" />
+              <div className="absolute w-1 h-16 bg-[hsl(var(--orange-glow)/.3)] rounded-full animate-[float-stick-1_4s_ease-in-out_infinite] top-2 left-4 rotate-12" />
+              <div className="absolute w-1.5 h-20 bg-[hsl(var(--orange-glow)/.25)] rounded-full animate-[float-stick-2_5s_ease-in-out_infinite] top-8 right-6 -rotate-15" />
+              <div className="absolute w-1 h-14 bg-[hsl(var(--orange-glow)/.3)] rounded-full animate-[float-stick-3_3.5s_ease-in-out_infinite] bottom-4 left-1/3 rotate-45" />
+              <div className="absolute w-1 h-12 bg-[hsl(var(--orange-glow)/.2)] rounded-full animate-[float-stick-1_4.5s_ease-in-out_infinite_0.5s] top-1/2 right-1/4 -rotate-30" />
+              <div className="absolute w-1.5 h-18 bg-[hsl(var(--orange-glow)/.25)] rounded-full animate-[float-stick-2_3.8s_ease-in-out_infinite_1s] bottom-8 right-10 rotate-20" />
+              <div className="absolute w-1 h-10 bg-[hsl(var(--orange-glow)/.3)] rounded-full animate-[float-stick-3_4.2s_ease-in-out_infinite_0.7s] top-4 left-1/2 -rotate-45" />
             </div>
             <CardHeader className="text-center relative z-10">
               <BookOpen className="h-12 w-12 text-primary mx-auto mb-4 group-hover:text-[hsl(var(--orange-glow))] transition-colors duration-300" />
