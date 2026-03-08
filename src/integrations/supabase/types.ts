@@ -313,6 +313,51 @@ export type Database = {
           },
         ]
       }
+      fees: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string
+          description: string | null
+          due_date: string
+          id: string
+          learner_user_id: string
+          paid_at: string | null
+          payment_reference: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by: string
+          description?: string | null
+          due_date: string
+          id?: string
+          learner_user_id: string
+          paid_at?: string | null
+          payment_reference?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_date?: string
+          id?: string
+          learner_user_id?: string
+          paid_at?: string | null
+          payment_reference?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       grades: {
         Row: {
           created_at: string
@@ -381,6 +426,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      meetings: {
+        Row: {
+          child_user_id: string
+          created_at: string
+          duration_minutes: number | null
+          id: string
+          message: string | null
+          parent_user_id: string
+          scheduled_date: string | null
+          scheduled_time: string | null
+          status: string
+          subject: string | null
+          teacher_notes: string | null
+          teacher_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          child_user_id: string
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          message?: string | null
+          parent_user_id: string
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          status?: string
+          subject?: string | null
+          teacher_notes?: string | null
+          teacher_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          child_user_id?: string
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          message?: string | null
+          parent_user_id?: string
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          status?: string
+          subject?: string | null
+          teacher_notes?: string | null
+          teacher_user_id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       message_threads: {
         Row: {
