@@ -75,6 +75,7 @@ const AdminDashboard = () => {
   const [classes, setClasses] = useState<ClassInfo[]>([]);
   const [learners, setLearners] = useState<LearnerRecord[]>([]);
   const [parentRelations, setParentRelations] = useState<ParentRelation[]>([]);
+  const [allFees, setAllFees] = useState<FeeRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -82,6 +83,7 @@ const AdminDashboard = () => {
   const [assignClassDialog, setAssignClassDialog] = useState(false);
   const [linkParentDialog, setLinkParentDialog] = useState(false);
   const [feeDialog, setFeeDialog] = useState(false);
+  const [editFeeDialog, setEditFeeDialog] = useState(false);
   const [createUserDialog, setCreateUserDialog] = useState(false);
   const [createClassDialog, setCreateClassDialog] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -96,12 +98,21 @@ const AdminDashboard = () => {
   const [selectedChild, setSelectedChild] = useState('');
   const [relationshipType, setRelationshipType] = useState('parent');
 
-  // Fee form
+  // Fee form (create)
   const [feeStudent, setFeeStudent] = useState('');
   const [feeTitle, setFeeTitle] = useState('');
   const [feeDescription, setFeeDescription] = useState('');
   const [feeAmount, setFeeAmount] = useState('');
   const [feeDueDate, setFeeDueDate] = useState('');
+
+  // Fee form (edit)
+  const [editFeeId, setEditFeeId] = useState('');
+  const [editFeeStudent, setEditFeeStudent] = useState('');
+  const [editFeeTitle, setEditFeeTitle] = useState('');
+  const [editFeeDescription, setEditFeeDescription] = useState('');
+  const [editFeeAmount, setEditFeeAmount] = useState('');
+  const [editFeeDueDate, setEditFeeDueDate] = useState('');
+  const [editFeeStatus, setEditFeeStatus] = useState('');
 
   // Create user form
   const [newUserEmail, setNewUserEmail] = useState('');
