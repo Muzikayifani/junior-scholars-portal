@@ -758,6 +758,9 @@ const ParentDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Announcements */}
+      <AnnouncementsFeed />
     </div>
   );
 
