@@ -23,7 +23,10 @@ import {
   BarChart3,
   Settings,
   GraduationCap,
-  MessageSquare
+  MessageSquare,
+  DollarSign,
+  CalendarClock,
+  Activity
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
@@ -39,9 +42,12 @@ const getLearnerMenuItems = () => [
 const getParentMenuItems = () => [
   { title: "Dashboard", url: "/dashboard", icon: Home },
   { title: "My Children", url: "/children", icon: Users },
+  { title: "Activity Feed", url: "/activity", icon: Activity },
   { title: "Progress Reports", url: "/reports", icon: BarChart3 },
   { title: "Assignments", url: "/assignments", icon: ClipboardList },
   { title: "Results", url: "/results", icon: Award },
+  { title: "Meetings", url: "/meetings", icon: CalendarClock },
+  { title: "Fees", url: "/fees", icon: DollarSign },
   { title: "Communication", url: "/communication", icon: FileText },
 ];
 
@@ -52,6 +58,8 @@ const getTeacherMenuItems = () => [
   { title: "Assessments", url: "/assessments", icon: ClipboardList },
   { title: "Results", url: "/results", icon: Award },
   { title: "Schedule", url: "/schedule", icon: Calendar },
+  { title: "Meetings", url: "/meetings", icon: CalendarClock },
+  { title: "Fees", url: "/fees", icon: DollarSign },
   { title: "Communication", url: "/communication", icon: FileText },
 ];
 
