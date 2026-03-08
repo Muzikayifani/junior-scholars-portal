@@ -11,7 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Users, BookOpen, ClipboardList, GraduationCap, Shield, Search, BarChart3, Plus, Link2, DollarSign, UserPlus, X, Pencil, Trash2, CheckCircle, AlertTriangle, Clock, Upload, Download } from 'lucide-react';
+import { Users, BookOpen, ClipboardList, GraduationCap, Shield, Search, BarChart3, Plus, Link2, DollarSign, UserPlus, X, Pencil, Trash2, CheckCircle, AlertTriangle, Clock, Upload, Download, FileSpreadsheet } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -162,6 +163,63 @@ const AdminDashboard = () => {
     const updated = [...bulkLearners];
     updated[index] = { ...updated[index], [field]: value };
     setBulkLearners(updated);
+  };
+
+  const handleExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const data = new Uint8Array(evt.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json<Record<string, string>>(sheet);
+        
+        if (rows.length === 0) {
+          toast.error('No data found in spreadsheet');
+          return;
+        }
+
+        // Map columns flexibly (case-insensitive, common variations)
+        const mapped = rows.map(row => {
+          const keys = Object.keys(row);
+          const find = (patterns: string[]) => {
+            const key = keys.find(k => patterns.some(p => k.toLowerCase().replace(/[_\s]/g, '').includes(p)));
+            return key ? String(row[key]).trim() : '';
+          };
+          return {
+            firstName: find(['firstname', 'first', 'name']) || find(['name']),
+            lastName: find(['lastname', 'last', 'surname']),
+            email: find(['email', 'mail']),
+          };
+        }).filter(r => r.firstName || r.lastName || r.email);
+
+        if (mapped.length === 0) {
+          toast.error('Could not find columns. Use headers: First Name, Last Name, Email');
+          return;
+        }
+
+        setBulkLearners(mapped);
+        toast.success(`Loaded ${mapped.length} rows from spreadsheet`);
+      } catch {
+        toast.error('Failed to parse spreadsheet');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    e.target.value = '';
+  };
+
+  const downloadTemplate = () => {
+    const ws = XLSX.utils.aoa_to_sheet([
+      ['First Name', 'Last Name', 'Email'],
+      ['John', 'Doe', 'john.doe@example.com'],
+      ['Jane', 'Smith', 'jane.smith@example.com'],
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Learners');
+    XLSX.writeFile(wb, 'bulk_learners_template.xlsx');
   };
 
   const handleBulkAddLearners = async () => {
@@ -863,6 +921,41 @@ const AdminDashboard = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+
+                {/* Excel Upload Section */}
+                <div className="rounded-lg border border-dashed border-muted-foreground/30 p-4 space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <FileSpreadsheet className="h-4 w-4 text-primary" />
+                    Import from Excel / CSV
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    <label htmlFor="excel-upload">
+                      <Button variant="outline" size="sm" asChild disabled={bulkSubmitting}>
+                        <span><Upload className="h-4 w-4 mr-1" />Upload Spreadsheet</span>
+                      </Button>
+                    </label>
+                    <input
+                      id="excel-upload"
+                      type="file"
+                      className="hidden"
+                      accept=".xlsx,.xls,.csv"
+                      onChange={handleExcelUpload}
+                      disabled={bulkSubmitting}
+                    />
+                    <Button variant="ghost" size="sm" onClick={downloadTemplate}>
+                      <Download className="h-4 w-4 mr-1" />Download Template
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Excel columns: <strong>First Name</strong>, <strong>Last Name</strong>, <strong>Email</strong>
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="h-px flex-1 bg-border" />
+                  <span className="text-xs text-muted-foreground">or add manually</span>
+                  <div className="h-px flex-1 bg-border" />
                 </div>
 
                 <ScrollArea className="max-h-[300px]">
