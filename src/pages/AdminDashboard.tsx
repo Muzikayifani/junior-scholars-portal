@@ -106,7 +106,7 @@ const AdminDashboard = () => {
     setLoading(true);
     try {
       const [profilesRes, classesRes, learnersRes, relationsRes] = await Promise.all([
-        supabase.from('profiles').select('user_id, full_name, email, role, created_at').order('created_at', { ascending: false }),
+        supabase.from('profiles').select('user_id, full_name, first_name, last_name, email, phone, role, created_at').order('created_at', { ascending: false }),
         supabase.from('classes').select('id, name, grade_level, teacher_id, school_year').order('grade_level'),
         supabase.from('learners').select('id, user_id, class_id, student_number, status'),
         supabase.from('parent_child_relationships').select('id, parent_user_id, child_user_id, relationship_type'),
