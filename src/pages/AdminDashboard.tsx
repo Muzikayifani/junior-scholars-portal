@@ -620,6 +620,7 @@ const AdminDashboard = () => {
                 </div>
               </DialogContent>
             </Dialog>
+            </div>
           </div>
 
           {/* Classes with teachers */}
