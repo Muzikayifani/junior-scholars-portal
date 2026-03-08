@@ -103,12 +103,17 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarContent className="animate-fade-in">
-        <div className="p-4 border-b hover-lift">
-          <div className="flex items-center gap-2">
-            <GraduationCap className="h-6 w-6 text-sidebar-primary transition-all duration-300 hover:scale-110 hover:text-primary" />
-            <span className="font-semibold text-sidebar-foreground bg-gradient-primary bg-clip-text text-transparent">
-              Junior Scholars
-            </span>
+        <div className="p-4 border-b">
+          <div className="flex items-center gap-3">
+            <img src={schoolLogo} alt="E-School Logo" className="h-10 w-10 object-contain" />
+            <div className="flex flex-col">
+              <span className="font-bold text-lg text-primary">
+                E-School
+              </span>
+              <span className="text-[10px] text-muted-foreground tracking-wide">
+                Learn. Track. Succeed.
+              </span>
+            </div>
           </div>
         </div>
 

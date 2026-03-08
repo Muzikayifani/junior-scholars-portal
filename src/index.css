@@ -18,8 +18,8 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 7%;
 
-    /* Learning Blue - headings, navigation */
-    --primary: 223 72% 42%;
+    /* Learning Blue - headings, navigation (lighter) */
+    --primary: 223 72% 50%;
     --primary-foreground: 0 0% 100%;
 
     /* Ubuntu Green tinted secondary */
