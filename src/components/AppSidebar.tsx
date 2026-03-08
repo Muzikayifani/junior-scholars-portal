@@ -69,7 +69,6 @@ const getAdminMenuItems = () => [
   { title: "Users", url: "/admin", icon: Users },
   { title: "Classes", url: "/admin", icon: BookOpen },
   { title: "Fees", url: "/fees", icon: DollarSign },
-  { title: "Meetings", url: "/meetings", icon: CalendarClock },
   { title: "Communication", url: "/communication", icon: FileText },
 ];
 
