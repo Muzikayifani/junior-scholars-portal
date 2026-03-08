@@ -11,8 +11,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Users, BookOpen, ClipboardList, GraduationCap, Shield, Search, BarChart3, Plus, Link2, DollarSign, UserPlus, X, Pencil } from 'lucide-react';
+import { Users, BookOpen, ClipboardList, GraduationCap, Shield, Search, BarChart3, Plus, Link2, DollarSign, UserPlus, X, Pencil, Trash2, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { Navigate } from 'react-router-dom';
 
@@ -54,12 +55,27 @@ interface ParentRelation {
   child?: { full_name: string | null; email: string | null };
 }
 
+interface FeeRecord {
+  id: string;
+  learner_user_id: string;
+  title: string;
+  description: string | null;
+  amount: number;
+  due_date: string;
+  status: string;
+  paid_at: string | null;
+  payment_reference: string | null;
+  created_at: string;
+  created_by: string;
+}
+
 const AdminDashboard = () => {
   const { profile, session } = useAuth();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [classes, setClasses] = useState<ClassInfo[]>([]);
   const [learners, setLearners] = useState<LearnerRecord[]>([]);
   const [parentRelations, setParentRelations] = useState<ParentRelation[]>([]);
+  const [allFees, setAllFees] = useState<FeeRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -67,6 +83,7 @@ const AdminDashboard = () => {
   const [assignClassDialog, setAssignClassDialog] = useState(false);
   const [linkParentDialog, setLinkParentDialog] = useState(false);
   const [feeDialog, setFeeDialog] = useState(false);
+  const [editFeeDialog, setEditFeeDialog] = useState(false);
   const [createUserDialog, setCreateUserDialog] = useState(false);
   const [createClassDialog, setCreateClassDialog] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -81,12 +98,21 @@ const AdminDashboard = () => {
   const [selectedChild, setSelectedChild] = useState('');
   const [relationshipType, setRelationshipType] = useState('parent');
 
-  // Fee form
+  // Fee form (create)
   const [feeStudent, setFeeStudent] = useState('');
   const [feeTitle, setFeeTitle] = useState('');
   const [feeDescription, setFeeDescription] = useState('');
   const [feeAmount, setFeeAmount] = useState('');
   const [feeDueDate, setFeeDueDate] = useState('');
+
+  // Fee form (edit)
+  const [editFeeId, setEditFeeId] = useState('');
+  const [editFeeStudent, setEditFeeStudent] = useState('');
+  const [editFeeTitle, setEditFeeTitle] = useState('');
+  const [editFeeDescription, setEditFeeDescription] = useState('');
+  const [editFeeAmount, setEditFeeAmount] = useState('');
+  const [editFeeDueDate, setEditFeeDueDate] = useState('');
+  const [editFeeStatus, setEditFeeStatus] = useState('');
 
   // Create user form
   const [newUserEmail, setNewUserEmail] = useState('');
@@ -114,11 +140,12 @@ const AdminDashboard = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [profilesRes, classesRes, learnersRes, relationsRes] = await Promise.all([
+      const [profilesRes, classesRes, learnersRes, relationsRes, feesRes] = await Promise.all([
         supabase.from('profiles').select('user_id, full_name, first_name, last_name, email, phone, role, created_at').order('created_at', { ascending: false }),
         supabase.from('classes').select('id, name, grade_level, teacher_id, school_year').order('grade_level'),
         supabase.from('learners').select('id, user_id, class_id, student_number, status'),
         supabase.from('parent_child_relationships').select('id, parent_user_id, child_user_id, relationship_type'),
+        supabase.from('fees').select('*').order('due_date', { ascending: false }),
       ]);
 
       if (profilesRes.error) throw profilesRes.error;
@@ -126,6 +153,7 @@ const AdminDashboard = () => {
       setClasses(classesRes.data || []);
       setLearners(learnersRes.data || []);
       setParentRelations(relationsRes.data || []);
+      setAllFees(feesRes.data || []);
     } catch (error) {
       console.error('Error fetching admin data:', error);
       toast.error('Failed to load admin data');
@@ -290,7 +318,79 @@ const AdminDashboard = () => {
     }
   };
 
-  // Create new user via edge function
+  // Open edit fee dialog
+  const openEditFee = (fee: FeeRecord) => {
+    setEditFeeId(fee.id);
+    setEditFeeStudent(fee.learner_user_id);
+    setEditFeeTitle(fee.title);
+    setEditFeeDescription(fee.description || '');
+    setEditFeeAmount(String(fee.amount));
+    setEditFeeDueDate(fee.due_date);
+    setEditFeeStatus(fee.status);
+    setEditFeeDialog(true);
+  };
+
+  // Update fee
+  const handleUpdateFee = async () => {
+    if (!editFeeTitle || !editFeeAmount || !editFeeDueDate || !editFeeStudent) {
+      toast.error('Fill in all required fields');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const updateData: Record<string, any> = {
+        learner_user_id: editFeeStudent,
+        title: editFeeTitle,
+        description: editFeeDescription || null,
+        amount: parseFloat(editFeeAmount),
+        due_date: editFeeDueDate,
+        status: editFeeStatus,
+      };
+      if (editFeeStatus === 'paid') {
+        const existingFee = allFees.find(f => f.id === editFeeId);
+        if (!existingFee?.paid_at) {
+          updateData.paid_at = new Date().toISOString();
+        }
+      } else {
+        updateData.paid_at = null;
+      }
+      const { error } = await supabase.from('fees').update(updateData).eq('id', editFeeId);
+      if (error) throw error;
+      toast.success('Fee updated');
+      setEditFeeDialog(false);
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update fee');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Delete fee
+  const handleDeleteFee = async (feeId: string) => {
+    try {
+      const { error } = await supabase.from('fees').delete().eq('id', feeId);
+      if (error) throw error;
+      toast.success('Fee deleted');
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete fee');
+    }
+  };
+
+  // Mark fee as paid
+  const handleMarkFeePaid = async (feeId: string) => {
+    try {
+      const { error } = await supabase.from('fees').update({ status: 'paid', paid_at: new Date().toISOString() }).eq('id', feeId);
+      if (error) throw error;
+      toast.success('Fee marked as paid');
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update');
+    }
+  };
+
+
   const handleCreateUser = async () => {
     if (!newUserEmail || !newUserPassword || !newUserFirstName || !newUserLastName || !newUserRole) {
       toast.error('Fill in all required fields');
@@ -843,8 +943,13 @@ const AdminDashboard = () => {
 
         {/* ========== FEES TAB ========== */}
         <TabsContent value="fees" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Fee Management</h2>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h2 className="text-lg font-semibold">Fee Management</h2>
+              <p className="text-sm text-muted-foreground">
+                {allFees.length} fee{allFees.length !== 1 ? 's' : ''} · Outstanding: R{allFees.filter(f => f.status !== 'paid').reduce((s, f) => s + Number(f.amount), 0).toFixed(2)} · Paid: R{allFees.filter(f => f.status === 'paid').reduce((s, f) => s + Number(f.amount), 0).toFixed(2)}
+              </p>
+            </div>
             <Dialog open={feeDialog} onOpenChange={setFeeDialog}>
               <DialogTrigger asChild>
                 <Button><Plus className="h-4 w-4 mr-2" />Create Fee</Button>
@@ -888,13 +993,124 @@ const AdminDashboard = () => {
               </DialogContent>
             </Dialog>
           </div>
-          <Card className="glass-card">
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <DollarSign className="h-12 w-12 text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">Use the button above to create fees. Parents will see fees on their Fees page.</p>
-              <p className="text-sm text-muted-foreground mt-1">Visit the <a href="/fees" className="text-primary underline">Fees page</a> to manage existing fees.</p>
-            </CardContent>
-          </Card>
+
+          {/* Edit Fee Dialog */}
+          <Dialog open={editFeeDialog} onOpenChange={setEditFeeDialog}>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Edit Fee</DialogTitle></DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label>Learner</Label>
+                  <Select value={editFeeStudent} onValueChange={setEditFeeStudent}>
+                    <SelectTrigger><SelectValue placeholder="Choose learner" /></SelectTrigger>
+                    <SelectContent>
+                      {learnerUsers.map(l => (
+                        <SelectItem key={l.user_id} value={l.user_id}>{l.full_name || l.email}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Fee Title</Label>
+                  <Input value={editFeeTitle} onChange={e => setEditFeeTitle(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Description</Label>
+                  <Textarea value={editFeeDescription} onChange={e => setEditFeeDescription(e.target.value)} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Amount (R)</Label>
+                    <Input type="number" value={editFeeAmount} onChange={e => setEditFeeAmount(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>Due Date</Label>
+                    <Input type="date" value={editFeeDueDate} onChange={e => setEditFeeDueDate(e.target.value)} />
+                  </div>
+                </div>
+                <div>
+                  <Label>Status</Label>
+                  <Select value={editFeeStatus} onValueChange={setEditFeeStatus}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unpaid">Unpaid</SelectItem>
+                      <SelectItem value="paid">Paid</SelectItem>
+                      <SelectItem value="overdue">Overdue</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button onClick={handleUpdateFee} disabled={submitting} className="w-full">
+                  {submitting ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {allFees.length === 0 ? (
+            <Card className="glass-card">
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <DollarSign className="h-12 w-12 text-muted-foreground mb-3" />
+                <p className="text-muted-foreground">No fees created yet. Use the button above to create one.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="glass-card">
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Learner</TableHead>
+                      <TableHead>Fee</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Due Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {allFees.map(fee => {
+                      const statusColors: Record<string, string> = {
+                        unpaid: 'bg-destructive text-destructive-foreground',
+                        paid: 'bg-success text-success-foreground',
+                        overdue: 'bg-warning text-warning-foreground',
+                      };
+                      return (
+                        <TableRow key={fee.id}>
+                          <TableCell className="font-medium">{getUserName(fee.learner_user_id)}</TableCell>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{fee.title}</p>
+                              {fee.description && <p className="text-xs text-muted-foreground">{fee.description}</p>}
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-semibold">R{Number(fee.amount).toFixed(2)}</TableCell>
+                          <TableCell>{format(new Date(fee.due_date), 'MMM d, yyyy')}</TableCell>
+                          <TableCell>
+                            <Badge className={statusColors[fee.status] || 'bg-muted text-muted-foreground'}>{fee.status}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              {fee.status !== 'paid' && (
+                                <Button variant="ghost" size="sm" className="text-success" onClick={() => handleMarkFeePaid(fee.id)}>
+                                  <CheckCircle className="h-4 w-4 mr-1" />Paid
+                                </Button>
+                              )}
+                              <Button variant="ghost" size="sm" onClick={() => openEditFee(fee)}>
+                                <Pencil className="h-4 w-4 mr-1" />Edit
+                              </Button>
+                              <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleDeleteFee(fee.id)}>
+                                <Trash2 className="h-4 w-4 mr-1" />Delete
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* ========== OVERVIEW TAB ========== */}
