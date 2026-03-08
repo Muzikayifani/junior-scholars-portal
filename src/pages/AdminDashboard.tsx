@@ -308,6 +308,21 @@ const AdminDashboard = () => {
     }
   };
 
+  // Change user role via edge function
+  const handleChangeRole = async (userId: string, newRole: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('update-user-role', {
+        body: { user_id: userId, new_role: newRole },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(`Role updated to ${newRole}`);
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update role');
+    }
+  };
+
   // Unassign teacher from class
   const handleUnassignTeacher = async (classId: string) => {
     try {
@@ -436,6 +451,7 @@ const AdminDashboard = () => {
                     <TableHead>Email</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Joined</TableHead>
+                    <TableHead>Change Role</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -445,10 +461,27 @@ const AdminDashboard = () => {
                       <TableCell className="text-muted-foreground">{user.email || '—'}</TableCell>
                       <TableCell><Badge className={roleColors[user.role] || 'bg-muted text-muted-foreground'}>{user.role}</Badge></TableCell>
                       <TableCell className="text-muted-foreground text-sm">{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        {user.user_id !== profile?.user_id ? (
+                          <Select value={user.role} onValueChange={(val) => handleChangeRole(user.user_id, val)}>
+                            <SelectTrigger className="w-[120px] h-8">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="learner">Learner</SelectItem>
+                              <SelectItem value="teacher">Teacher</SelectItem>
+                              <SelectItem value="parent">Parent</SelectItem>
+                              <SelectItem value="admin">Admin</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Current user</span>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))}
                   {filteredUsers.length === 0 && (
-                    <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">No users found</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No users found</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
