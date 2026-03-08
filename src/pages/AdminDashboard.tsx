@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Users, BookOpen, ClipboardList, GraduationCap, Shield, Search, BarChart3, Plus, Link2, DollarSign, UserPlus, X } from 'lucide-react';
+import { Users, BookOpen, ClipboardList, GraduationCap, Shield, Search, BarChart3, Plus, Link2, DollarSign, UserPlus, X, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { Navigate } from 'react-router-dom';
@@ -19,7 +19,10 @@ import { Navigate } from 'react-router-dom';
 interface UserProfile {
   user_id: string;
   full_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
   email: string | null;
+  phone: string | null;
   role: string;
   created_at: string;
 }
@@ -99,11 +102,20 @@ const AdminDashboard = () => {
   const [newClassCapacity, setNewClassCapacity] = useState('30');
   const [newClassTeacher, setNewClassTeacher] = useState('');
 
+  // Edit user form
+  const [editUserDialog, setEditUserDialog] = useState(false);
+  const [editUserId, setEditUserId] = useState('');
+  const [editFirstName, setEditFirstName] = useState('');
+  const [editLastName, setEditLastName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editPassword, setEditPassword] = useState('');
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [profilesRes, classesRes, learnersRes, relationsRes] = await Promise.all([
-        supabase.from('profiles').select('user_id, full_name, email, role, created_at').order('created_at', { ascending: false }),
+        supabase.from('profiles').select('user_id, full_name, first_name, last_name, email, phone, role, created_at').order('created_at', { ascending: false }),
         supabase.from('classes').select('id, name, grade_level, teacher_id, school_year').order('grade_level'),
         supabase.from('learners').select('id, user_id, class_id, student_number, status'),
         supabase.from('parent_child_relationships').select('id, parent_user_id, child_user_id, relationship_type'),
@@ -331,6 +343,44 @@ const AdminDashboard = () => {
     }
   };
 
+  // Open edit user dialog
+  const openEditUser = (user: UserProfile) => {
+    setEditUserId(user.user_id);
+    setEditFirstName(user.first_name || '');
+    setEditLastName(user.last_name || '');
+    setEditEmail(user.email || '');
+    setEditPhone(user.phone || '');
+    setEditPassword('');
+    setEditUserDialog(true);
+  };
+
+  // Update user details via edge function
+  const handleUpdateUser = async () => {
+    if (!editUserId) return;
+    setSubmitting(true);
+    try {
+      const body: Record<string, any> = {
+        user_id: editUserId,
+        first_name: editFirstName,
+        last_name: editLastName,
+        email: editEmail,
+        phone: editPhone,
+      };
+      if (editPassword) body.password = editPassword;
+
+      const { data, error } = await supabase.functions.invoke('update-user', { body });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success('User updated successfully');
+      setEditUserDialog(false);
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update user');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   // Create new class
   const handleCreateClass = async () => {
     if (!newClassName || !newClassGrade) {
@@ -491,6 +541,7 @@ const AdminDashboard = () => {
                     <TableHead>Role</TableHead>
                     <TableHead>Joined</TableHead>
                     <TableHead>Change Role</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -517,15 +568,55 @@ const AdminDashboard = () => {
                           <span className="text-xs text-muted-foreground">Current user</span>
                         )}
                       </TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="sm" onClick={() => openEditUser(user)}>
+                          <Pencil className="h-4 w-4 mr-1" />Edit
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                   {filteredUsers.length === 0 && (
-                    <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No users found</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No users found</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
+
+          {/* Edit User Dialog */}
+          <Dialog open={editUserDialog} onOpenChange={setEditUserDialog}>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Edit User Details</DialogTitle></DialogHeader>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>First Name</Label>
+                    <Input value={editFirstName} onChange={e => setEditFirstName(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>Last Name</Label>
+                    <Input value={editLastName} onChange={e => setEditLastName(e.target.value)} />
+                  </div>
+                </div>
+                <div>
+                  <Label>Email</Label>
+                  <Input type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Phone</Label>
+                  <Input value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="Optional" />
+                </div>
+                <div>
+                  <Label>New Password</Label>
+                  <Input type="password" value={editPassword} onChange={e => setEditPassword(e.target.value)} placeholder="Leave blank to keep current" />
+                  <p className="text-xs text-muted-foreground mt-1">Min 8 characters. Leave empty to keep the current password.</p>
+                </div>
+                <Button onClick={handleUpdateUser} disabled={submitting} className="w-full">
+                  {submitting ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         {/* ========== CLASSES TAB ========== */}
