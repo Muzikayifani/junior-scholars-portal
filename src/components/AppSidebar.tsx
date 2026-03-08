@@ -23,7 +23,10 @@ import {
   BarChart3,
   Settings,
   GraduationCap,
-  MessageSquare
+  MessageSquare,
+  DollarSign,
+  CalendarClock,
+  Activity
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
