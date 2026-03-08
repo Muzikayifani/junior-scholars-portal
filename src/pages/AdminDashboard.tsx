@@ -52,7 +52,7 @@ interface ParentRelation {
 }
 
 const AdminDashboard = () => {
-  const { profile } = useAuth();
+  const { profile, session } = useAuth();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [classes, setClasses] = useState<ClassInfo[]>([]);
   const [learners, setLearners] = useState<LearnerRecord[]>([]);
@@ -64,6 +64,7 @@ const AdminDashboard = () => {
   const [assignClassDialog, setAssignClassDialog] = useState(false);
   const [linkParentDialog, setLinkParentDialog] = useState(false);
   const [feeDialog, setFeeDialog] = useState(false);
+  const [createUserDialog, setCreateUserDialog] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   // Assign to class form
@@ -82,6 +83,13 @@ const AdminDashboard = () => {
   const [feeDescription, setFeeDescription] = useState('');
   const [feeAmount, setFeeAmount] = useState('');
   const [feeDueDate, setFeeDueDate] = useState('');
+
+  // Create user form
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [newUserFirstName, setNewUserFirstName] = useState('');
+  const [newUserLastName, setNewUserLastName] = useState('');
+  const [newUserRole, setNewUserRole] = useState<string>('learner');
 
   const fetchData = useCallback(async () => {
     setLoading(true);
