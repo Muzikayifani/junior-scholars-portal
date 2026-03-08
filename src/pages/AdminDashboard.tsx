@@ -877,6 +877,48 @@ const AdminDashboard = () => {
             </div>
           </div>
 
+          {/* Edit Class Dialog */}
+          <Dialog open={editClassDialog} onOpenChange={setEditClassDialog}>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Edit Class</DialogTitle></DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label>Class Name</Label>
+                  <Input value={editClassName} onChange={e => setEditClassName(e.target.value)} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Grade Level</Label>
+                    <Input type="number" min="1" max="12" value={editClassGrade} onChange={e => setEditClassGrade(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>Capacity</Label>
+                    <Input type="number" value={editClassCapacity} onChange={e => setEditClassCapacity(e.target.value)} />
+                  </div>
+                </div>
+                <div>
+                  <Label>School Year</Label>
+                  <Input value={editClassYear} onChange={e => setEditClassYear(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Assign Teacher</Label>
+                  <Select value={editClassTeacher} onValueChange={setEditClassTeacher}>
+                    <SelectTrigger><SelectValue placeholder="No teacher assigned" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No teacher</SelectItem>
+                      {teachers.map(t => (
+                        <SelectItem key={t.user_id} value={t.user_id}>{t.full_name || t.email}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button onClick={handleUpdateClass} disabled={submitting} className="w-full">
+                  {submitting ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
           {/* Classes with teachers */}
           <div className="grid gap-4">
             {classes.map(cls => {
@@ -886,7 +928,15 @@ const AdminDashboard = () => {
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg">{cls.name} — Grade {cls.grade_level}</CardTitle>
-                      <Badge variant="outline">{cls.school_year}</Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">{cls.school_year}</Badge>
+                        <Button variant="ghost" size="sm" onClick={() => openEditClass(cls)}>
+                          <Pencil className="h-4 w-4 mr-1" />Edit
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleDeleteClass(cls.id)}>
+                          <Trash2 className="h-4 w-4 mr-1" />Delete
+                        </Button>
+                      </div>
                     </div>
                     <CardDescription>
                       Teacher: {cls.teacher_id ? (
