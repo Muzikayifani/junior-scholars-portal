@@ -673,6 +673,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      child_has_result_for_assessment: {
+        Args: { target_assessment_id: string }
+        Returns: boolean
+      }
       class_belongs_to_teacher: {
         Args: { target_learner_id: string }
         Returns: boolean
@@ -695,6 +699,10 @@ export type Database = {
       }
       is_parent: { Args: never; Returns: boolean }
       is_teacher: { Args: never; Returns: boolean }
+      learner_has_result_for_assessment: {
+        Args: { target_assessment_id: string }
+        Returns: boolean
+      }
       user_is_enrolled_in_class: {
         Args: { target_class_id: string }
         Returns: boolean
