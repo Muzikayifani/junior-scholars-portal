@@ -56,6 +56,7 @@ const Communication: React.FC = () => {
   const isTeacher = profile?.role === "teacher";
   const isParent = profile?.role === "parent";
   const isLearner = profile?.role === "learner";
+  const isAdmin = profile?.role === "admin";
 
   useEffect(() => {
     if (!profile) return;
@@ -208,7 +209,6 @@ const Communication: React.FC = () => {
     if (!profile || !isLearner) return;
     
     const loadTeachers = async () => {
-      // Get learner's class(es)
       const { data: learnerData } = await supabase
         .from("learners")
         .select("class_id")
@@ -217,8 +217,6 @@ const Communication: React.FC = () => {
 
       if (learnerData && learnerData.length > 0) {
         const classIds = learnerData.map(l => l.class_id);
-        
-        // Get teachers for these classes
         const { data: classData } = await supabase
           .from("classes")
           .select("id, name, teacher_id")
@@ -226,7 +224,6 @@ const Communication: React.FC = () => {
 
         if (classData && classData.length > 0) {
           const teacherIds = [...new Set(classData.map(c => c.teacher_id).filter(Boolean))];
-          
           const { data: teacherProfiles } = await supabase
             .from("profiles")
             .select("user_id, full_name")
@@ -244,6 +241,25 @@ const Communication: React.FC = () => {
     
     loadTeachers();
   }, [isLearner, profile]);
+
+  // Load all teachers for admin
+  useEffect(() => {
+    if (!profile || !isAdmin) return;
+    
+    const loadAllTeachers = async () => {
+      const { data: teacherProfiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .eq("role", "teacher");
+
+      setTeachers(teacherProfiles?.map(t => ({
+        ...t,
+        className: "Teacher"
+      })) || []);
+    };
+    
+    loadAllTeachers();
+  }, [isAdmin, profile]);
 
   // Load learners when class is selected
   useEffect(() => {
@@ -502,7 +518,9 @@ const Communication: React.FC = () => {
             ? "Message parents and students" 
             : isParent 
               ? "Contact your children's teachers" 
-              : "Message your teachers"}
+              : isAdmin
+                ? "Communicate with teachers"
+                : "Message your teachers"}
         </p>
       </div>
 
@@ -722,11 +740,11 @@ const Communication: React.FC = () => {
                     </Select>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    A conversation will be started with your teacher.
+                    {isAdmin ? "Start a conversation with a teacher." : "A conversation will be started with your teacher."}
                   </p>
                   {teachers.length === 0 && (
-                    <p className="text-xs text-amber-600">
-                      No teachers found. Make sure you are enrolled in a class.
+                    <p className="text-xs text-warning">
+                      {isAdmin ? "No teachers found in the system." : "No teachers found. Make sure you are enrolled in a class."}
                     </p>
                   )}
                 </>
