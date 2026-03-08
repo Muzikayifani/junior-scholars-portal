@@ -42,9 +42,12 @@ const getLearnerMenuItems = () => [
 const getParentMenuItems = () => [
   { title: "Dashboard", url: "/dashboard", icon: Home },
   { title: "My Children", url: "/children", icon: Users },
+  { title: "Activity Feed", url: "/activity", icon: Activity },
   { title: "Progress Reports", url: "/reports", icon: BarChart3 },
   { title: "Assignments", url: "/assignments", icon: ClipboardList },
   { title: "Results", url: "/results", icon: Award },
+  { title: "Meetings", url: "/meetings", icon: CalendarClock },
+  { title: "Fees", url: "/fees", icon: DollarSign },
   { title: "Communication", url: "/communication", icon: FileText },
 ];
 
