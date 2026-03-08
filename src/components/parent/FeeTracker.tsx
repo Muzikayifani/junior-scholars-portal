@@ -265,7 +265,7 @@ const FeeTracker = () => {
                   <TableHead>Amount</TableHead>
                   <TableHead>Due Date</TableHead>
                   <TableHead>Status</TableHead>
-                  {isTeacher && <TableHead>Actions</TableHead>}
+                  {isAdmin && <TableHead>Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
