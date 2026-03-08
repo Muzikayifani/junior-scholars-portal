@@ -37,11 +37,6 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Only admin role can access
-  if (profile && profile.role !== 'admin') {
-    return <Navigate to="/dashboard" replace />;
-  }
-
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
