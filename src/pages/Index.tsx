@@ -85,15 +85,26 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          <Card className="group cursor-pointer transition-all duration-300 hover:shadow-[0_0_20px_hsl(var(--orange-glow)/0.4)] hover:border-[hsl(var(--orange-glow))] hover:scale-105">
-            <CardHeader className="text-center">
+          <Card className="group cursor-pointer transition-all duration-300 hover:shadow-[0_0_20px_hsl(var(--orange-glow)/0.4)] hover:border-[hsl(var(--orange-glow))] hover:scale-105 relative overflow-hidden">
+            {/* Animated stars for Teachers */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+              <div className="absolute w-4 h-0.5 bg-[hsl(var(--orange-glow)/.45)] rounded-full animate-[float-star-1_4s_ease-in-out_infinite] top-6 left-5 rotate-45" />
+              <div className="absolute w-0.5 h-4 bg-[hsl(var(--orange-glow)/.45)] rounded-full animate-[float-star-1_4s_ease-in-out_infinite] top-[calc(1.5rem-7px)] left-[calc(1.25rem+7px)] rotate-45" />
+              <div className="absolute w-5 h-0.5 bg-[hsl(var(--orange-glow)/.4)] rounded-full animate-[float-star-2_5s_ease-in-out_infinite] top-14 right-8 -rotate-12" />
+              <div className="absolute w-0.5 h-5 bg-[hsl(var(--orange-glow)/.4)] rounded-full animate-[float-star-2_5s_ease-in-out_infinite] top-[calc(3.5rem-10px)] right-[calc(2rem+10px)] -rotate-12" />
+              <div className="absolute w-3 h-0.5 bg-[hsl(var(--orange-glow)/.5)] rounded-full animate-[float-star-1_3.5s_ease-in-out_infinite_0.6s] bottom-8 left-1/3 rotate-30" />
+              <div className="absolute w-0.5 h-3 bg-[hsl(var(--orange-glow)/.5)] rounded-full animate-[float-star-1_3.5s_ease-in-out_infinite_0.6s] bottom-[calc(2rem-5px)] left-[calc(33%+5px)] rotate-30" />
+              <div className="absolute w-4 h-0.5 bg-[hsl(var(--orange-glow)/.35)] rounded-full animate-[float-star-2_4.5s_ease-in-out_infinite_1s] top-1/2 right-1/4" />
+              <div className="absolute w-0.5 h-4 bg-[hsl(var(--orange-glow)/.35)] rounded-full animate-[float-star-2_4.5s_ease-in-out_infinite_1s] top-[calc(50%-7px)] right-[calc(25%+7px)]" />
+            </div>
+            <CardHeader className="text-center relative z-10">
               <Award className="h-12 w-12 text-primary mx-auto mb-4 group-hover:text-[hsl(var(--orange-glow))] transition-colors duration-300" />
               <CardTitle className="group-hover:text-[hsl(var(--orange-glow))] transition-colors duration-300">For Teachers</CardTitle>
               <CardDescription>
                 Manage classes and assess student performance
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="relative z-10">
               <ul className="text-sm text-muted-foreground space-y-2">
                 <li>• Create and manage assessments</li>
                 <li>• Grade assignments and tests</li>
