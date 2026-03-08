@@ -579,7 +579,6 @@ const AdminDashboard = () => {
                 <DialogTrigger asChild>
                   <Button><UserPlus className="h-4 w-4 mr-2" />Assign to Class</Button>
                 </DialogTrigger>
-              </DialogTrigger>
               <DialogContent>
                 <DialogHeader><DialogTitle>Assign User to Class</DialogTitle></DialogHeader>
                 <div className="space-y-4">
