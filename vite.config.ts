@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => ({
         name: 'E-School Portal',
         short_name: 'E-School',
         description: 'Educational platform for students, teachers, and parents',
-        theme_color: '#6366f1',
+        theme_color: '#1E4DB7',
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
