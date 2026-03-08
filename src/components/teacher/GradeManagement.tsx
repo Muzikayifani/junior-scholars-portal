@@ -351,7 +351,8 @@ const GradeManagement = () => {
                                 </div>
                               </form>
                             </DialogContent>
-                          </Dialog>
+                            </Dialog>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
