@@ -188,59 +188,39 @@ const TeacherPortal = () => {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6 animate-fade-in">
+    <div className="space-y-2 sm:space-y-4 md:space-y-6 animate-fade-in pb-20 sm:pb-0">
       <div className="animate-slide-up">
-        <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">Teacher Portal</h1>
-        <p className="text-sm sm:text-base text-muted-foreground">Manage your classes, assessments, and schedule</p>
+        <h1 className="text-lg sm:text-2xl md:text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">Teacher Portal</h1>
+        <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Manage your classes, assessments, and schedule</p>
       </div>
 
-      {/* Quick Stats */}
+      {/* Quick Stats - compact on mobile */}
       {loading ? (
-        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-2 sm:gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
           {[1,2,3,4].map(i => (
-            <Card key={i} className="glass-card"><CardContent className="pt-6"><LoadingSpinner size="sm" /></CardContent></Card>
+            <Card key={i} className="glass-card"><CardContent className="p-3 sm:pt-6"><LoadingSpinner size="sm" /></CardContent></Card>
           ))}
         </div>
       ) : (
-        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4 animate-scale-in">
+        <div className="grid gap-2 sm:gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4 animate-scale-in">
           <Card className="hover-lift hover-glow glass-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">My Classes</CardTitle>
-              <BookOpen className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">{stats.classesCount}</div>
-              <p className="text-xs text-muted-foreground">Active classes</p>
+            <CardContent className="p-2.5 sm:p-4 md:p-6">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-[10px] sm:text-xs md:text-sm font-medium text-muted-foreground">My Classes</p>
+                <BookOpen className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+              </div>
+              <div className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">{stats.classesCount}</div>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Active classes</p>
             </CardContent>
           </Card>
           <Card className="hover-lift hover-glow glass-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-info">{stats.studentsCount}</div>
-              <p className="text-xs text-muted-foreground">Across all classes</p>
-            </CardContent>
-          </Card>
-          <Card className="hover-lift hover-glow glass-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Grading</CardTitle>
-              <ClipboardList className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-destructive">{stats.pendingGrading}</div>
-              <p className="text-xs text-muted-foreground">Assignments to grade</p>
-            </CardContent>
-          </Card>
-          <Card className="hover-lift hover-glow glass-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Average Performance</CardTitle>
-              <Award className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-success">{stats.averagePerformance}%</div>
-              <p className="text-xs text-muted-foreground">Class average</p>
+            <CardContent className="p-2.5 sm:p-4 md:p-6">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-[10px] sm:text-xs md:text-sm font-medium text-muted-foreground">Pending Grading</p>
+                <ClipboardList className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+              </div>
+              <div className="text-lg sm:text-xl md:text-2xl font-bold text-destructive">{stats.pendingGrading}</div>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Assignments to grade</p>
             </CardContent>
           </Card>
         </div>
@@ -260,25 +240,25 @@ const TeacherPortal = () => {
         }, 50);
       }} className="w-full animate-fade-in">
         {/* Tab navigation with nav buttons before tabs */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-2">
+          <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-primary/10 text-primary hover:bg-primary/20 border border-primary/30 transition-all duration-300 disabled:opacity-30 disabled:bg-muted"
+              className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 rounded-full bg-primary/10 text-primary hover:bg-primary/20 border border-primary/30 transition-all duration-300 disabled:opacity-30 disabled:bg-muted"
               onClick={() => goToTab('prev')}
               disabled={!canGoPrev}
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-accent text-accent-foreground hover:bg-accent/80 border border-accent-foreground/10 transition-all duration-300 disabled:opacity-30 disabled:bg-muted"
+              className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 rounded-full bg-accent text-accent-foreground hover:bg-accent/80 border border-accent-foreground/10 transition-all duration-300 disabled:opacity-30 disabled:bg-muted"
               onClick={() => goToTab('next')}
               disabled={!canGoNext}
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Button>
           </div>
 
@@ -286,7 +266,7 @@ const TeacherPortal = () => {
             className="flex-1 overflow-x-auto scrollbar-hide scroll-smooth"
             ref={tabsListRef}
           >
-            <TabsList className="inline-flex w-max bg-muted/50 backdrop-blur-sm gap-0.5 p-1 rounded-lg border border-border/30">
+            <TabsList className="inline-flex w-max bg-muted/50 backdrop-blur-sm gap-0.5 p-0.5 sm:p-1 rounded-lg border border-border/30">
               {TAB_ITEMS.map(tab => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.value;
@@ -295,16 +275,17 @@ const TeacherPortal = () => {
                     key={tab.value}
                     value={tab.value}
                     className={cn(
-                      "flex items-center gap-1.5 text-xs sm:text-sm px-2.5 sm:px-3 py-1.5 rounded-md whitespace-nowrap transition-all duration-300 ease-out",
+                      "flex items-center gap-1 text-[11px] sm:text-xs md:text-sm px-1.5 sm:px-2.5 md:px-3 py-1 sm:py-1.5 rounded-md whitespace-nowrap transition-all duration-300 ease-out",
                       "hover:bg-background/60",
                       "data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:scale-[1.02]"
                     )}
                   >
                     <Icon className={cn(
-                      "h-3.5 w-3.5 shrink-0 transition-all duration-300",
+                      "h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0 transition-all duration-300",
                       isActive && "text-primary"
                     )} />
-                    <span>{tab.label}</span>
+                    <span className="hidden sm:inline">{tab.label}</span>
+                    <span className="sm:hidden">{tab.label}</span>
                   </TabsTrigger>
                 );
               })}
@@ -312,17 +293,17 @@ const TeacherPortal = () => {
           </div>
         </div>
 
-        {/* Tab position indicator */}
-        <div className="flex items-center justify-center gap-1.5 py-1.5">
+        {/* Tab position indicator - smaller on mobile */}
+        <div className="flex items-center justify-center gap-1 py-1 sm:py-1.5">
           <div className="flex gap-0.5">
             {TAB_ITEMS.map((_, i) => (
               <div
                 key={i}
                 className={cn(
-                  "h-1 rounded-full transition-all duration-300 ease-out",
+                  "h-0.5 sm:h-1 rounded-full transition-all duration-300 ease-out",
                   i === currentIndex
-                    ? "w-4 bg-primary"
-                    : "w-1 bg-muted-foreground/20"
+                    ? "w-3 sm:w-4 bg-primary"
+                    : "w-0.5 sm:w-1 bg-muted-foreground/20"
                 )}
               />
             ))}
@@ -330,20 +311,20 @@ const TeacherPortal = () => {
         </div>
         
         <div key={activeTab} className="animate-fade-in">
-          <TabsContent value="assessments" className="space-y-4"><CreateAssessment onAssessmentCreated={handleAssessmentCreated} /></TabsContent>
-          <TabsContent value="manage-assessments" className="space-y-4"><AssessmentManagement key={refreshKey} /></TabsContent>
-          <TabsContent value="gradebook" className="space-y-4"><GradeBook /></TabsContent>
-          <TabsContent value="bulk-grading" className="space-y-4"><BulkGrading /></TabsContent>
-          <TabsContent value="analytics" className="space-y-4"><GradeAnalytics /></TabsContent>
-          <TabsContent value="timetable" className="space-y-4"><TimetableBuilder /></TabsContent>
-          <TabsContent value="schedule" className="space-y-4"><ClassSchedule /></TabsContent>
-          <TabsContent value="students" className="space-y-4"><ManageStudents /></TabsContent>
-          <TabsContent value="all-students" className="space-y-4"><AllStudents /></TabsContent>
-          <TabsContent value="progress" className="space-y-4"><StudentProgressTracking /></TabsContent>
-          <TabsContent value="reports" className="space-y-4"><TeacherReports /></TabsContent>
-          <TabsContent value="report-cards" className="space-y-4"><ReportCardGenerator /></TabsContent>
-          <TabsContent value="attendance" className="space-y-4"><AttendanceMarking /></TabsContent>
-          <TabsContent value="announcements" className="space-y-4"><AnnouncementCompose /></TabsContent>
+          <TabsContent value="assessments" className="space-y-3 sm:space-y-4"><CreateAssessment onAssessmentCreated={handleAssessmentCreated} /></TabsContent>
+          <TabsContent value="manage-assessments" className="space-y-3 sm:space-y-4"><AssessmentManagement key={refreshKey} /></TabsContent>
+          <TabsContent value="gradebook" className="space-y-3 sm:space-y-4"><GradeBook /></TabsContent>
+          <TabsContent value="bulk-grading" className="space-y-3 sm:space-y-4"><BulkGrading /></TabsContent>
+          <TabsContent value="analytics" className="space-y-3 sm:space-y-4"><GradeAnalytics /></TabsContent>
+          <TabsContent value="timetable" className="space-y-3 sm:space-y-4"><TimetableBuilder /></TabsContent>
+          <TabsContent value="schedule" className="space-y-3 sm:space-y-4"><ClassSchedule /></TabsContent>
+          <TabsContent value="students" className="space-y-3 sm:space-y-4"><ManageStudents /></TabsContent>
+          <TabsContent value="all-students" className="space-y-3 sm:space-y-4"><AllStudents /></TabsContent>
+          <TabsContent value="progress" className="space-y-3 sm:space-y-4"><StudentProgressTracking /></TabsContent>
+          <TabsContent value="reports" className="space-y-3 sm:space-y-4"><TeacherReports /></TabsContent>
+          <TabsContent value="report-cards" className="space-y-3 sm:space-y-4"><ReportCardGenerator /></TabsContent>
+          <TabsContent value="attendance" className="space-y-3 sm:space-y-4"><AttendanceMarking /></TabsContent>
+          <TabsContent value="announcements" className="space-y-3 sm:space-y-4"><AnnouncementCompose /></TabsContent>
         </div>
       </Tabs>
     </div>
