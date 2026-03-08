@@ -317,8 +317,16 @@ const TeacherPortal = () => {
           <GradeBook />
         </TabsContent>
         
+        <TabsContent value="bulk-grading" className="space-y-4 animate-fade-in">
+          <BulkGrading />
+        </TabsContent>
+        
         <TabsContent value="analytics" className="space-y-4 animate-fade-in">
           <GradeAnalytics />
+        </TabsContent>
+        
+        <TabsContent value="timetable" className="space-y-4 animate-fade-in">
+          <TimetableBuilder />
         </TabsContent>
         
         <TabsContent value="schedule" className="space-y-4 animate-fade-in">
