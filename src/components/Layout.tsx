@@ -47,6 +47,7 @@ const Layout = ({ children }: LayoutProps) => {
               </div>
               
               <div className="flex items-center gap-2">
+                <ThemeToggle />
                 <NotificationCenter />
                 
                 <div className="hidden sm:flex items-center gap-2 text-sm p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-all duration-200">

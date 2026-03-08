@@ -29,6 +29,7 @@ import {
   Activity
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Shield } from 'lucide-react';
 
 const getLearnerMenuItems = () => [
   { title: "Dashboard", url: "/dashboard", icon: Home },
