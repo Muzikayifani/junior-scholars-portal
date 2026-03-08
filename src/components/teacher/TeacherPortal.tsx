@@ -328,20 +328,22 @@ const TeacherPortal = () => {
           </div>
         </div>
         
-        <TabsContent value="assessments" className="space-y-4 animate-fade-in"><CreateAssessment onAssessmentCreated={handleAssessmentCreated} /></TabsContent>
-        <TabsContent value="manage-assessments" className="space-y-4 animate-fade-in"><AssessmentManagement key={refreshKey} /></TabsContent>
-        <TabsContent value="gradebook" className="space-y-4 animate-fade-in"><GradeBook /></TabsContent>
-        <TabsContent value="bulk-grading" className="space-y-4 animate-fade-in"><BulkGrading /></TabsContent>
-        <TabsContent value="analytics" className="space-y-4 animate-fade-in"><GradeAnalytics /></TabsContent>
-        <TabsContent value="timetable" className="space-y-4 animate-fade-in"><TimetableBuilder /></TabsContent>
-        <TabsContent value="schedule" className="space-y-4 animate-fade-in"><ClassSchedule /></TabsContent>
-        <TabsContent value="students" className="space-y-4 animate-fade-in"><ManageStudents /></TabsContent>
-        <TabsContent value="all-students" className="space-y-4 animate-fade-in"><AllStudents /></TabsContent>
-        <TabsContent value="progress" className="space-y-4 animate-fade-in"><StudentProgressTracking /></TabsContent>
-        <TabsContent value="reports" className="space-y-4 animate-fade-in"><TeacherReports /></TabsContent>
-        <TabsContent value="report-cards" className="space-y-4 animate-fade-in"><ReportCardGenerator /></TabsContent>
-        <TabsContent value="attendance" className="space-y-4 animate-fade-in"><AttendanceMarking /></TabsContent>
-        <TabsContent value="announcements" className="space-y-4 animate-fade-in"><AnnouncementCompose /></TabsContent>
+        <div key={activeTab} className="animate-fade-in">
+          <TabsContent value="assessments" className="space-y-4"><CreateAssessment onAssessmentCreated={handleAssessmentCreated} /></TabsContent>
+          <TabsContent value="manage-assessments" className="space-y-4"><AssessmentManagement key={refreshKey} /></TabsContent>
+          <TabsContent value="gradebook" className="space-y-4"><GradeBook /></TabsContent>
+          <TabsContent value="bulk-grading" className="space-y-4"><BulkGrading /></TabsContent>
+          <TabsContent value="analytics" className="space-y-4"><GradeAnalytics /></TabsContent>
+          <TabsContent value="timetable" className="space-y-4"><TimetableBuilder /></TabsContent>
+          <TabsContent value="schedule" className="space-y-4"><ClassSchedule /></TabsContent>
+          <TabsContent value="students" className="space-y-4"><ManageStudents /></TabsContent>
+          <TabsContent value="all-students" className="space-y-4"><AllStudents /></TabsContent>
+          <TabsContent value="progress" className="space-y-4"><StudentProgressTracking /></TabsContent>
+          <TabsContent value="reports" className="space-y-4"><TeacherReports /></TabsContent>
+          <TabsContent value="report-cards" className="space-y-4"><ReportCardGenerator /></TabsContent>
+          <TabsContent value="attendance" className="space-y-4"><AttendanceMarking /></TabsContent>
+          <TabsContent value="announcements" className="space-y-4"><AnnouncementCompose /></TabsContent>
+        </div>
       </Tabs>
     </div>
   );
