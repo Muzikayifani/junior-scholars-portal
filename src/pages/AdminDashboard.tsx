@@ -582,6 +582,41 @@ const AdminDashboard = () => {
               </Table>
             </CardContent>
           </Card>
+
+          {/* Edit User Dialog */}
+          <Dialog open={editUserDialog} onOpenChange={setEditUserDialog}>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Edit User Details</DialogTitle></DialogHeader>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>First Name</Label>
+                    <Input value={editFirstName} onChange={e => setEditFirstName(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>Last Name</Label>
+                    <Input value={editLastName} onChange={e => setEditLastName(e.target.value)} />
+                  </div>
+                </div>
+                <div>
+                  <Label>Email</Label>
+                  <Input type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Phone</Label>
+                  <Input value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="Optional" />
+                </div>
+                <div>
+                  <Label>New Password</Label>
+                  <Input type="password" value={editPassword} onChange={e => setEditPassword(e.target.value)} placeholder="Leave blank to keep current" />
+                  <p className="text-xs text-muted-foreground mt-1">Min 8 characters. Leave empty to keep the current password.</p>
+                </div>
+                <Button onClick={handleUpdateUser} disabled={submitting} className="w-full">
+                  {submitting ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         {/* ========== CLASSES TAB ========== */}
