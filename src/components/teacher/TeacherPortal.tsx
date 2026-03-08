@@ -259,18 +259,8 @@ const TeacherPortal = () => {
           }
         }, 50);
       }} className="w-full animate-fade-in">
-        {/* Tab navigation with prev/next buttons */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="shrink-0 h-8 w-8 sm:h-9 sm:w-9 rounded-full border border-border/50 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 disabled:opacity-30"
-            onClick={() => goToTab('prev')}
-            disabled={!canGoPrev}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-
+        {/* Tab navigation with grouped prev/next buttons */}
+        <div className="flex items-center gap-2">
           <div
             className="flex-1 overflow-x-auto scrollbar-hide scroll-smooth"
             ref={tabsListRef}
@@ -300,15 +290,26 @@ const TeacherPortal = () => {
             </TabsList>
           </div>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            className="shrink-0 h-8 w-8 sm:h-9 sm:w-9 rounded-full border border-border/50 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 disabled:opacity-30"
-            onClick={() => goToTab('next')}
-            disabled={!canGoNext}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1 shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-primary/10 text-primary hover:bg-primary/20 border border-primary/30 transition-all duration-300 disabled:opacity-30 disabled:bg-muted"
+              onClick={() => goToTab('prev')}
+              disabled={!canGoPrev}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-accent text-accent-foreground hover:bg-accent/80 border border-accent-foreground/10 transition-all duration-300 disabled:opacity-30 disabled:bg-muted"
+              onClick={() => goToTab('next')}
+              disabled={!canGoNext}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Tab position indicator */}
