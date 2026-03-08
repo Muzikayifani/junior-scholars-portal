@@ -39,8 +39,8 @@ Deno.serve(async (req) => {
       .eq('user_id', user.id)
       .single()
 
-    if (profileError || profile?.role !== 'teacher') {
-      throw new Error('Only teachers can create students')
+    if (profileError || (profile?.role !== 'teacher' && profile?.role !== 'admin')) {
+      throw new Error('Only teachers or admins can create students')
     }
 
     // Parse request body
