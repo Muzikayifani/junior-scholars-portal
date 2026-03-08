@@ -343,6 +343,44 @@ const AdminDashboard = () => {
     }
   };
 
+  // Open edit user dialog
+  const openEditUser = (user: UserProfile) => {
+    setEditUserId(user.user_id);
+    setEditFirstName(user.first_name || '');
+    setEditLastName(user.last_name || '');
+    setEditEmail(user.email || '');
+    setEditPhone(user.phone || '');
+    setEditPassword('');
+    setEditUserDialog(true);
+  };
+
+  // Update user details via edge function
+  const handleUpdateUser = async () => {
+    if (!editUserId) return;
+    setSubmitting(true);
+    try {
+      const body: Record<string, any> = {
+        user_id: editUserId,
+        first_name: editFirstName,
+        last_name: editLastName,
+        email: editEmail,
+        phone: editPhone,
+      };
+      if (editPassword) body.password = editPassword;
+
+      const { data, error } = await supabase.functions.invoke('update-user', { body });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success('User updated successfully');
+      setEditUserDialog(false);
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update user');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   // Create new class
   const handleCreateClass = async () => {
     if (!newClassName || !newClassGrade) {
