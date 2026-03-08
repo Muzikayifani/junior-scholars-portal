@@ -236,8 +236,7 @@ const ManageStudents = () => {
             firstName,
             lastName,
             email: addForm.email,
-            classId: addForm.class_id,
-            studentNumber: addForm.student_number || null
+            classId: addForm.class_id
           })
         }
       );
@@ -250,8 +249,8 @@ const ManageStudents = () => {
 
       toast({
         title: "Success",
-        description: `Student added successfully! Temporary password: ${result.data.tempPassword} (Please save this and share with the student)`,
-        duration: 15000, // Show for 15 seconds so teacher can copy it
+        description: `Student created! Student Number: ${result.data.studentNumber} | Temp Password: ${result.data.tempPassword}`,
+        duration: 20000,
       });
       
       setShowAddStudent(false);
@@ -336,13 +335,8 @@ const ManageStudents = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="add_student_number">Student Number</Label>
-                <Input
-                  id="add_student_number"
-                  value={addForm.student_number}
-                  onChange={(e) => setAddForm({...addForm, student_number: e.target.value})}
-                  required
-                />
+                <Label className="text-muted-foreground text-xs">Student Number</Label>
+                <p className="text-sm text-muted-foreground italic">Auto-generated on creation</p>
               </div>
               
               <div className="space-y-2">
