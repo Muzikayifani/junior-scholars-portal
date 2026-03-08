@@ -46,13 +46,30 @@ export default function Schedule() {
     try {
       setLoading(true);
       
-      // If parent is viewing a specific child's schedule
-      if (profile?.role === 'parent' && childUserId) {
+      // If parent viewing schedule (with or without specific child)
+      if (profile?.role === 'parent') {
+        let targetChildUserId = childUserId;
+        
+        // If no child specified, get first child
+        if (!targetChildUserId) {
+          const { data: children } = await supabase
+            .from('parent_child_relationships')
+            .select('child_user_id')
+            .eq('parent_user_id', profile.user_id)
+            .limit(1);
+          
+          if (!children || children.length === 0) {
+            setSchedule([]);
+            return;
+          }
+          targetChildUserId = children[0].child_user_id;
+        }
+
         // Get child's name
         const { data: childProfile } = await supabase
           .from('profiles')
           .select('full_name')
-          .eq('user_id', childUserId)
+          .eq('user_id', targetChildUserId)
           .single();
         
         if (childProfile) setChildName(childProfile.full_name || 'Child');
@@ -61,7 +78,7 @@ export default function Schedule() {
         const { data: learnerData, error: learnerError } = await supabase
           .from('learners')
           .select('class_id')
-          .eq('user_id', childUserId)
+          .eq('user_id', targetChildUserId)
           .maybeSingle();
 
         if (learnerError) throw learnerError;
