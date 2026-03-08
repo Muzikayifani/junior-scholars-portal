@@ -247,34 +247,7 @@ export default function Settings() {
       </Card>
 
       {/* Security Settings */}
-      <Card className="hover-lift">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Lock className="h-5 w-5 text-primary" />
-            <CardTitle>Security</CardTitle>
-          </div>
-          <CardDescription>
-            Manage your account security settings.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Button variant="outline" className="w-full md:w-auto">
-            Change Password
-          </Button>
-          
-          <Separator />
-          
-          <div className="space-y-2">
-            <Label>Two-Factor Authentication</Label>
-            <p className="text-sm text-muted-foreground">
-              Add an extra layer of security to your account
-            </p>
-            <Button variant="outline" className="w-full md:w-auto">
-              Enable 2FA
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <PasswordChangeCard />
     </div>
   );
 }
