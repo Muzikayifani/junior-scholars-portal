@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
     }
 
     // Parse request body
-    const { firstName, lastName, email, classId, studentNumber } = await req.json()
+    const { firstName, lastName, email, classId } = await req.json()
 
     if (!firstName || !lastName || !email || !classId) {
       throw new Error('Missing required fields')
