@@ -243,3 +243,17 @@ All colors MUST be HSL.
     display: none;
   }
 }
+
+/* Floating sticks animation for learner card */
+@keyframes float-stick-1 {
+  0%, 100% { transform: translateY(0) rotate(12deg); opacity: 0.3; }
+  50% { transform: translateY(-12px) rotate(20deg); opacity: 0.6; }
+}
+@keyframes float-stick-2 {
+  0%, 100% { transform: translateY(0) rotate(-15deg); opacity: 0.25; }
+  50% { transform: translateY(-10px) rotate(-5deg); opacity: 0.5; }
+}
+@keyframes float-stick-3 {
+  0%, 100% { transform: translateY(0) rotate(45deg); opacity: 0.2; }
+  50% { transform: translateY(-15px) rotate(35deg); opacity: 0.55; }
+}
