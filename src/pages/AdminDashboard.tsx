@@ -140,11 +140,12 @@ const AdminDashboard = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [profilesRes, classesRes, learnersRes, relationsRes] = await Promise.all([
+      const [profilesRes, classesRes, learnersRes, relationsRes, feesRes] = await Promise.all([
         supabase.from('profiles').select('user_id, full_name, first_name, last_name, email, phone, role, created_at').order('created_at', { ascending: false }),
         supabase.from('classes').select('id, name, grade_level, teacher_id, school_year').order('grade_level'),
         supabase.from('learners').select('id, user_id, class_id, student_number, status'),
         supabase.from('parent_child_relationships').select('id, parent_user_id, child_user_id, relationship_type'),
+        supabase.from('fees').select('*').order('due_date', { ascending: false }),
       ]);
 
       if (profilesRes.error) throw profilesRes.error;
@@ -152,6 +153,7 @@ const AdminDashboard = () => {
       setClasses(classesRes.data || []);
       setLearners(learnersRes.data || []);
       setParentRelations(relationsRes.data || []);
+      setAllFees(feesRes.data || []);
     } catch (error) {
       console.error('Error fetching admin data:', error);
       toast.error('Failed to load admin data');
