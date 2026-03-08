@@ -17,7 +17,7 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5">
       {/* Header with full-width logo background */}
       <header className="w-full relative overflow-hidden border-b">
-        <img src={schoolLogo} alt="E-School Banner" className="w-full h-auto max-h-48 object-contain object-center bg-primary/10" />
+        <img src={schoolLogo} alt="E-School Banner" className="w-full h-32 sm:h-40 md:h-48 object-contain" />
         <div className="absolute inset-0 bg-gradient-to-r from-primary/70 via-primary/40 to-primary/70 flex items-center justify-center">
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white drop-shadow-lg tracking-tight" style={{ fontFamily: "'Fredoka', 'Baloo 2', 'Nunito', sans-serif" }}>
             E-school
