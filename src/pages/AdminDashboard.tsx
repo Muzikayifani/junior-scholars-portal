@@ -128,6 +128,15 @@ const AdminDashboard = () => {
   const [newClassCapacity, setNewClassCapacity] = useState('30');
   const [newClassTeacher, setNewClassTeacher] = useState('');
 
+  // Edit class form
+  const [editClassDialog, setEditClassDialog] = useState(false);
+  const [editClassId, setEditClassId] = useState('');
+  const [editClassName, setEditClassName] = useState('');
+  const [editClassGrade, setEditClassGrade] = useState('');
+  const [editClassYear, setEditClassYear] = useState('');
+  const [editClassCapacity, setEditClassCapacity] = useState('');
+  const [editClassTeacher, setEditClassTeacher] = useState('');
+
   // Edit user form
   const [editUserDialog, setEditUserDialog] = useState(false);
   const [editUserId, setEditUserId] = useState('');
@@ -512,6 +521,60 @@ const AdminDashboard = () => {
     }
   };
 
+  // Open edit class dialog
+  const openEditClass = (cls: ClassInfo) => {
+    setEditClassId(cls.id);
+    setEditClassName(cls.name);
+    setEditClassGrade(String(cls.grade_level));
+    setEditClassYear(cls.school_year);
+    setEditClassCapacity('30');
+    setEditClassTeacher(cls.teacher_id || '');
+    setEditClassDialog(true);
+  };
+
+  // Update class
+  const handleUpdateClass = async () => {
+    if (!editClassName || !editClassGrade) {
+      toast.error('Class name and grade level are required');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.from('classes').update({
+        name: editClassName,
+        grade_level: parseInt(editClassGrade),
+        school_year: editClassYear,
+        capacity: parseInt(editClassCapacity) || 30,
+        teacher_id: editClassTeacher && editClassTeacher !== 'none' ? editClassTeacher : null,
+      }).eq('id', editClassId);
+      if (error) throw error;
+      toast.success('Class updated');
+      setEditClassDialog(false);
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update class');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Delete class
+  const handleDeleteClass = async (classId: string) => {
+    const classLearners = learners.filter(l => l.class_id === classId);
+    if (classLearners.length > 0) {
+      toast.error('Remove all learners from this class before deleting');
+      return;
+    }
+    try {
+      const { error } = await supabase.from('classes').delete().eq('id', classId);
+      if (error) throw error;
+      toast.success('Class deleted');
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete class');
+    }
+  };
+
   // Unassign teacher from class
   const handleUnassignTeacher = async (classId: string) => {
     try {
@@ -814,6 +877,48 @@ const AdminDashboard = () => {
             </div>
           </div>
 
+          {/* Edit Class Dialog */}
+          <Dialog open={editClassDialog} onOpenChange={setEditClassDialog}>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Edit Class</DialogTitle></DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label>Class Name</Label>
+                  <Input value={editClassName} onChange={e => setEditClassName(e.target.value)} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Grade Level</Label>
+                    <Input type="number" min="1" max="12" value={editClassGrade} onChange={e => setEditClassGrade(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>Capacity</Label>
+                    <Input type="number" value={editClassCapacity} onChange={e => setEditClassCapacity(e.target.value)} />
+                  </div>
+                </div>
+                <div>
+                  <Label>School Year</Label>
+                  <Input value={editClassYear} onChange={e => setEditClassYear(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Assign Teacher</Label>
+                  <Select value={editClassTeacher} onValueChange={setEditClassTeacher}>
+                    <SelectTrigger><SelectValue placeholder="No teacher assigned" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No teacher</SelectItem>
+                      {teachers.map(t => (
+                        <SelectItem key={t.user_id} value={t.user_id}>{t.full_name || t.email}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button onClick={handleUpdateClass} disabled={submitting} className="w-full">
+                  {submitting ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
           {/* Classes with teachers */}
           <div className="grid gap-4">
             {classes.map(cls => {
@@ -823,7 +928,15 @@ const AdminDashboard = () => {
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg">{cls.name} — Grade {cls.grade_level}</CardTitle>
-                      <Badge variant="outline">{cls.school_year}</Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">{cls.school_year}</Badge>
+                        <Button variant="ghost" size="sm" onClick={() => openEditClass(cls)}>
+                          <Pencil className="h-4 w-4 mr-1" />Edit
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleDeleteClass(cls.id)}>
+                          <Trash2 className="h-4 w-4 mr-1" />Delete
+                        </Button>
+                      </div>
                     </div>
                     <CardDescription>
                       Teacher: {cls.teacher_id ? (
