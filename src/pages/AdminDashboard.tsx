@@ -76,6 +76,11 @@ const AdminDashboard = () => {
     fetchData();
   }, [fetchData]);
 
+  // Only admin role can access
+  if (profile && profile.role !== 'admin') {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   const filteredUsers = users.filter(u =>
     (u.full_name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
     (u.email?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
