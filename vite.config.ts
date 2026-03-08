@@ -17,8 +17,8 @@ export default defineConfig(({ mode }) => ({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'icons/*.png'],
       manifest: {
-        name: 'Junior Scholars Portal',
-        short_name: 'Junior Scholars',
+        name: 'E-School Portal',
+        short_name: 'E-School',
         description: 'Educational platform for students, teachers, and parents',
         theme_color: '#6366f1',
         background_color: '#ffffff',
