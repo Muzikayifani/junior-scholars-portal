@@ -335,13 +335,8 @@ const ManageStudents = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="add_student_number">Student Number</Label>
-                <Input
-                  id="add_student_number"
-                  value={addForm.student_number}
-                  onChange={(e) => setAddForm({...addForm, student_number: e.target.value})}
-                  required
-                />
+                <Label className="text-muted-foreground text-xs">Student Number</Label>
+                <p className="text-sm text-muted-foreground italic">Auto-generated on creation</p>
               </div>
               
               <div className="space-y-2">
