@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -65,10 +66,15 @@ const TeacherPortal = () => {
     const newIndex = direction === 'prev' ? currentIndex - 1 : currentIndex + 1;
     if (newIndex >= 0 && newIndex < TAB_ITEMS.length) {
       setActiveTab(TAB_ITEMS[newIndex].value);
-      // Scroll the tab into view
       setTimeout(() => {
-        const tabEl = tabsListRef.current?.querySelector(`[data-state="active"]`);
-        tabEl?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        const container = tabsListRef.current;
+        const tabEl = container?.querySelector(`[data-state="active"]`) as HTMLElement;
+        if (tabEl && container) {
+          const containerRect = container.getBoundingClientRect();
+          const tabRect = tabEl.getBoundingClientRect();
+          const scrollLeft = container.scrollLeft + (tabRect.left - containerRect.left) - (containerRect.width / 2) + (tabRect.width / 2);
+          container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+        }
       }, 50);
     }
   };
@@ -240,30 +246,53 @@ const TeacherPortal = () => {
         </div>
       )}
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full animate-bounce-in">
+      <Tabs value={activeTab} onValueChange={(val) => {
+        setActiveTab(val);
+        setTimeout(() => {
+          const container = tabsListRef.current;
+          const tabEl = container?.querySelector(`[data-state="active"]`) as HTMLElement;
+          if (tabEl && container) {
+            const containerRect = container.getBoundingClientRect();
+            const tabRect = tabEl.getBoundingClientRect();
+            const scrollLeft = container.scrollLeft + (tabRect.left - containerRect.left) - (containerRect.width / 2) + (tabRect.width / 2);
+            container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+          }
+        }, 50);
+      }} className="w-full animate-fade-in">
         {/* Tab navigation with prev/next buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon"
-            className="shrink-0 h-10 w-10 rounded-full"
+            className="shrink-0 h-8 w-8 sm:h-9 sm:w-9 rounded-full border border-border/50 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 disabled:opacity-30"
             onClick={() => goToTab('prev')}
             disabled={!canGoPrev}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
 
-          <div className="flex-1 overflow-x-auto scrollbar-hide" ref={tabsListRef}>
-            <TabsList className="inline-flex w-max glass-card gap-1 p-1">
+          <div
+            className="flex-1 overflow-x-auto scrollbar-hide scroll-smooth"
+            ref={tabsListRef}
+          >
+            <TabsList className="inline-flex w-max bg-muted/50 backdrop-blur-sm gap-0.5 p-1 rounded-lg border border-border/30">
               {TAB_ITEMS.map(tab => {
                 const Icon = tab.icon;
+                const isActive = activeTab === tab.value;
                 return (
                   <TabsTrigger
                     key={tab.value}
                     value={tab.value}
-                    className="flex items-center gap-1 sm:gap-2 transition-all duration-200 text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap"
+                    className={cn(
+                      "flex items-center gap-1.5 text-xs sm:text-sm px-2.5 sm:px-3 py-1.5 rounded-md whitespace-nowrap transition-all duration-300 ease-out",
+                      "hover:bg-background/60",
+                      "data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:scale-[1.02]"
+                    )}
                   >
-                    <Icon className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                    <Icon className={cn(
+                      "h-3.5 w-3.5 shrink-0 transition-all duration-300",
+                      isActive && "text-primary"
+                    )} />
                     <span>{tab.label}</span>
                   </TabsTrigger>
                 );
@@ -272,9 +301,9 @@ const TeacherPortal = () => {
           </div>
 
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon"
-            className="shrink-0 h-10 w-10 rounded-full"
+            className="shrink-0 h-8 w-8 sm:h-9 sm:w-9 rounded-full border border-border/50 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 disabled:opacity-30"
             onClick={() => goToTab('next')}
             disabled={!canGoNext}
           >
@@ -282,11 +311,21 @@ const TeacherPortal = () => {
           </Button>
         </div>
 
-        {/* Tab indicator */}
-        <div className="flex items-center justify-center gap-1 py-2">
-          <span className="text-xs text-muted-foreground">
-            {currentIndex + 1} / {TAB_ITEMS.length}
-          </span>
+        {/* Tab position indicator */}
+        <div className="flex items-center justify-center gap-1.5 py-1.5">
+          <div className="flex gap-0.5">
+            {TAB_ITEMS.map((_, i) => (
+              <div
+                key={i}
+                className={cn(
+                  "h-1 rounded-full transition-all duration-300 ease-out",
+                  i === currentIndex
+                    ? "w-4 bg-primary"
+                    : "w-1 bg-muted-foreground/20"
+                )}
+              />
+            ))}
+          </div>
         </div>
         
         <TabsContent value="assessments" className="space-y-4 animate-fade-in"><CreateAssessment onAssessmentCreated={handleAssessmentCreated} /></TabsContent>
