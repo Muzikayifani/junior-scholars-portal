@@ -13,7 +13,10 @@ import StudentProgressTracking from './StudentProgressTracking';
 import AllStudents from './AllStudents';
 import AttendanceMarking from './AttendanceMarking';
 import AnnouncementCompose from './AnnouncementCompose';
-import { BookOpen, Calendar, ClipboardList, Users, Award, TrendingUp, BarChart3, FileText, GraduationCap, Sparkles, CheckSquare, Megaphone } from 'lucide-react';
+import BulkGrading from './BulkGrading';
+import ReportCardGenerator from './ReportCardGenerator';
+import TimetableBuilder from './TimetableBuilder';
+import { BookOpen, Calendar, ClipboardList, Users, Award, TrendingUp, BarChart3, FileText, GraduationCap, Sparkles, CheckSquare, Megaphone, ListChecks, Printer, LayoutGrid } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -242,7 +245,7 @@ const TeacherPortal = () => {
 
       <Tabs defaultValue="assessments" className="w-full animate-bounce-in">
         <div className="overflow-x-auto -mx-3 sm:-mx-4 md:mx-0 px-3 sm:px-4 md:px-0">
-          <TabsList className="inline-flex w-max min-w-full md:w-full md:grid md:grid-cols-5 lg:grid-cols-11 glass-card gap-1">
+          <TabsList className="inline-flex w-max min-w-full md:w-full md:grid md:grid-cols-5 lg:grid-cols-14 glass-card gap-1">
             <TabsTrigger value="assessments" className="flex items-center gap-1 sm:gap-2 transition-all duration-200 hover:scale-105 text-xs sm:text-sm px-2 sm:px-3">
               <ClipboardList className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
               <span>Create</span>
@@ -255,9 +258,17 @@ const TeacherPortal = () => {
               <BookOpen className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
               <span>Grades</span>
             </TabsTrigger>
+            <TabsTrigger value="bulk-grading" className="flex items-center gap-1 sm:gap-2 transition-all duration-200 hover:scale-105 text-xs sm:text-sm px-2 sm:px-3">
+              <ListChecks className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+              <span>Bulk Grade</span>
+            </TabsTrigger>
             <TabsTrigger value="analytics" className="flex items-center gap-1 sm:gap-2 transition-all duration-200 hover:scale-105 text-xs sm:text-sm px-2 sm:px-3">
               <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
               <span>Stats</span>
+            </TabsTrigger>
+            <TabsTrigger value="timetable" className="flex items-center gap-1 sm:gap-2 transition-all duration-200 hover:scale-105 text-xs sm:text-sm px-2 sm:px-3">
+              <LayoutGrid className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+              <span>Timetable</span>
             </TabsTrigger>
             <TabsTrigger value="schedule" className="flex items-center gap-1 sm:gap-2 transition-all duration-200 hover:scale-105 text-xs sm:text-sm px-2 sm:px-3">
               <Calendar className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
@@ -278,6 +289,10 @@ const TeacherPortal = () => {
             <TabsTrigger value="reports" className="flex items-center gap-1 sm:gap-2 transition-all duration-200 hover:scale-105 text-xs sm:text-sm px-2 sm:px-3">
               <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
               <span>Reports</span>
+            </TabsTrigger>
+            <TabsTrigger value="report-cards" className="flex items-center gap-1 sm:gap-2 transition-all duration-200 hover:scale-105 text-xs sm:text-sm px-2 sm:px-3">
+              <Printer className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+              <span>Report Cards</span>
             </TabsTrigger>
             <TabsTrigger value="attendance" className="flex items-center gap-1 sm:gap-2 transition-all duration-200 hover:scale-105 text-xs sm:text-sm px-2 sm:px-3">
               <CheckSquare className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
@@ -302,8 +317,16 @@ const TeacherPortal = () => {
           <GradeBook />
         </TabsContent>
         
+        <TabsContent value="bulk-grading" className="space-y-4 animate-fade-in">
+          <BulkGrading />
+        </TabsContent>
+        
         <TabsContent value="analytics" className="space-y-4 animate-fade-in">
           <GradeAnalytics />
+        </TabsContent>
+        
+        <TabsContent value="timetable" className="space-y-4 animate-fade-in">
+          <TimetableBuilder />
         </TabsContent>
         
         <TabsContent value="schedule" className="space-y-4 animate-fade-in">
@@ -324,6 +347,10 @@ const TeacherPortal = () => {
         
         <TabsContent value="reports" className="space-y-4 animate-fade-in">
           <TeacherReports />
+        </TabsContent>
+        
+        <TabsContent value="report-cards" className="space-y-4 animate-fade-in">
+          <ReportCardGenerator />
         </TabsContent>
         
         <TabsContent value="attendance" className="space-y-4 animate-fade-in">
