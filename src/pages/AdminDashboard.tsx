@@ -270,6 +270,44 @@ const AdminDashboard = () => {
     }
   };
 
+  // Create new user via edge function
+  const handleCreateUser = async () => {
+    if (!newUserEmail || !newUserPassword || !newUserFirstName || !newUserLastName || !newUserRole) {
+      toast.error('Fill in all required fields');
+      return;
+    }
+    if (newUserPassword.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: {
+          email: newUserEmail,
+          password: newUserPassword,
+          first_name: newUserFirstName,
+          last_name: newUserLastName,
+          role: newUserRole,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(`${newUserRole} account created for ${newUserEmail}`);
+      setCreateUserDialog(false);
+      setNewUserEmail('');
+      setNewUserPassword('');
+      setNewUserFirstName('');
+      setNewUserLastName('');
+      setNewUserRole('learner');
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create user');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   // Unassign teacher from class
   const handleUnassignTeacher = async (classId: string) => {
     try {
