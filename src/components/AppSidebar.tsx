@@ -80,23 +80,16 @@ export function AppSidebar() {
   const { unreadCount } = useUnreadMessages();
 
   const getMenuItems = () => {
-    const items = (() => {
-      switch (profile?.role) {
-        case 'parent':
-          return getParentMenuItems();
-        case 'teacher':
-          return getTeacherMenuItems();
-        default:
-          return getLearnerMenuItems();
-      }
-    })();
-    if (profile?.role === 'admin') {
-      return [
-        { title: "Admin Dashboard", url: "/admin", icon: Shield },
-        ...items,
-      ];
+    switch (profile?.role) {
+      case 'admin':
+        return getAdminMenuItems();
+      case 'parent':
+        return getParentMenuItems();
+      case 'teacher':
+        return getTeacherMenuItems();
+      default:
+        return getLearnerMenuItems();
     }
-    return items;
   };
 
   const menuItems = getMenuItems();
