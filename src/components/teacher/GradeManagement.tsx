@@ -279,16 +279,27 @@ const GradeManagement = () => {
                             'N/A'}
                         </TableCell>
                         <TableCell>
-                          <Dialog>
-                            <DialogTrigger asChild>
+                          <div className="flex items-center gap-1">
+                            {submission.submission_path && (
                               <Button
-                                variant={submission.status === 'graded' ? 'outline' : 'default'}
+                                variant="ghost"
                                 size="sm"
-                                onClick={() => openGradingDialog(submission)}
+                                onClick={() => handleDownloadSubmission(submission.submission_path)}
+                                title="Download submission"
                               >
-                                {submission.status === 'graded' ? 'Edit Grade' : 'Grade'}
+                                <Download className="h-4 w-4" />
                               </Button>
-                            </DialogTrigger>
+                            )}
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button
+                                  variant={submission.status === 'graded' ? 'outline' : 'default'}
+                                  size="sm"
+                                  onClick={() => openGradingDialog(submission)}
+                                >
+                                  {submission.status === 'graded' ? 'Edit Grade' : 'Grade'}
+                                </Button>
+                              </DialogTrigger>
                             <DialogContent className="max-w-md">
                               <DialogHeader>
                                 <DialogTitle>
