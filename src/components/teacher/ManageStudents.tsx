@@ -236,8 +236,7 @@ const ManageStudents = () => {
             firstName,
             lastName,
             email: addForm.email,
-            classId: addForm.class_id,
-            studentNumber: addForm.student_number || null
+            classId: addForm.class_id
           })
         }
       );
