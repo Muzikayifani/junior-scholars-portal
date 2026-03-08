@@ -203,12 +203,15 @@ const LearnerDashboard = () => {
 
         let averageGrade = 0;
         if (resultsData && resultsData.length > 0) {
-          const totalPercentage = resultsData.reduce((sum, result) => {
-            const assessment = result.assessment as any;
-            const percentage = (result.marks_obtained / assessment.total_marks) * 100;
-            return sum + percentage;
-          }, 0);
-          averageGrade = Math.round(totalPercentage / resultsData.length);
+          const validResults = resultsData.filter(r => r.assessment && (r.assessment as any).total_marks);
+          if (validResults.length > 0) {
+            const totalPercentage = validResults.reduce((sum, result) => {
+              const assessment = result.assessment as any;
+              const percentage = (result.marks_obtained / assessment.total_marks) * 100;
+              return sum + percentage;
+            }, 0);
+            averageGrade = Math.round(totalPercentage / validResults.length);
+          }
         }
 
         // Get next class from schedule
