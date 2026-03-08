@@ -50,10 +50,10 @@ const Index = () => {
             </CardHeader>
             <CardContent className="relative z-10">
               <ul className="text-sm text-muted-foreground space-y-2">
-                <li>• View class assignments</li>
-                <li>• Track homework and tests</li>
+                <li>• View and submit assignments</li>
+                <li>• Track, submit homeworks</li>
                 <li>• Check grades and feedback</li>
-                <li>• Manage class schedule</li>
+                <li>• View class schedule</li>
               </ul>
             </CardContent>
           </Card>
