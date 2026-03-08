@@ -417,6 +417,9 @@ const LearnerDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Announcements */}
+      <AnnouncementsFeed />
     </div>
   );
 
