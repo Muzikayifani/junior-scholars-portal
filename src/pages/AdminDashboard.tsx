@@ -377,12 +377,56 @@ const AdminDashboard = () => {
 
         {/* ========== USERS TAB ========== */}
         <TabsContent value="users" className="space-y-4">
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1">
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Search users..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10" />
             </div>
             <Badge variant="outline">{filteredUsers.length} users</Badge>
+            <Dialog open={createUserDialog} onOpenChange={setCreateUserDialog}>
+              <DialogTrigger asChild>
+                <Button><UserPlus className="h-4 w-4 mr-2" />Create User</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Create New User Account</DialogTitle></DialogHeader>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>First Name</Label>
+                      <Input value={newUserFirstName} onChange={e => setNewUserFirstName(e.target.value)} placeholder="John" />
+                    </div>
+                    <div>
+                      <Label>Last Name</Label>
+                      <Input value={newUserLastName} onChange={e => setNewUserLastName(e.target.value)} placeholder="Doe" />
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Email</Label>
+                    <Input type="email" value={newUserEmail} onChange={e => setNewUserEmail(e.target.value)} placeholder="user@example.com" />
+                  </div>
+                  <div>
+                    <Label>Password</Label>
+                    <Input type="password" value={newUserPassword} onChange={e => setNewUserPassword(e.target.value)} placeholder="Min 8 characters" />
+                  </div>
+                  <div>
+                    <Label>Role</Label>
+                    <Select value={newUserRole} onValueChange={setNewUserRole}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="learner">Learner</SelectItem>
+                        <SelectItem value="teacher">Teacher</SelectItem>
+                        <SelectItem value="parent">Parent</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button onClick={handleCreateUser} disabled={submitting} className="w-full">
+                    {submitting ? 'Creating...' : 'Create Account'}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
           </div>
           <Card className="glass-card">
             <CardContent className="p-0">
