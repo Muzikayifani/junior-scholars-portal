@@ -65,10 +65,15 @@ const TeacherPortal = () => {
     const newIndex = direction === 'prev' ? currentIndex - 1 : currentIndex + 1;
     if (newIndex >= 0 && newIndex < TAB_ITEMS.length) {
       setActiveTab(TAB_ITEMS[newIndex].value);
-      // Scroll the tab into view
       setTimeout(() => {
-        const tabEl = tabsListRef.current?.querySelector(`[data-state="active"]`);
-        tabEl?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        const container = tabsListRef.current;
+        const tabEl = container?.querySelector(`[data-state="active"]`) as HTMLElement;
+        if (tabEl && container) {
+          const containerRect = container.getBoundingClientRect();
+          const tabRect = tabEl.getBoundingClientRect();
+          const scrollLeft = container.scrollLeft + (tabRect.left - containerRect.left) - (containerRect.width / 2) + (tabRect.width / 2);
+          container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+        }
       }, 50);
     }
   };
