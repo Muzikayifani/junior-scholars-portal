@@ -128,6 +128,15 @@ const AdminDashboard = () => {
   const [newClassCapacity, setNewClassCapacity] = useState('30');
   const [newClassTeacher, setNewClassTeacher] = useState('');
 
+  // Edit class form
+  const [editClassDialog, setEditClassDialog] = useState(false);
+  const [editClassId, setEditClassId] = useState('');
+  const [editClassName, setEditClassName] = useState('');
+  const [editClassGrade, setEditClassGrade] = useState('');
+  const [editClassYear, setEditClassYear] = useState('');
+  const [editClassCapacity, setEditClassCapacity] = useState('');
+  const [editClassTeacher, setEditClassTeacher] = useState('');
+
   // Edit user form
   const [editUserDialog, setEditUserDialog] = useState(false);
   const [editUserId, setEditUserId] = useState('');
