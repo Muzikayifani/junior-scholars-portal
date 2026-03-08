@@ -64,6 +64,15 @@ const getTeacherMenuItems = () => [
   { title: "Communication", url: "/communication", icon: FileText },
 ];
 
+const getAdminMenuItems = () => [
+  { title: "Admin Dashboard", url: "/admin", icon: Shield },
+  { title: "Users", url: "/admin", icon: Users },
+  { title: "Classes", url: "/admin", icon: BookOpen },
+  { title: "Fees", url: "/fees", icon: DollarSign },
+  { title: "Meetings", url: "/meetings", icon: CalendarClock },
+  { title: "Communication", url: "/communication", icon: FileText },
+];
+
 export function AppSidebar() {
   const { profile } = useAuth();
   const location = useLocation();
