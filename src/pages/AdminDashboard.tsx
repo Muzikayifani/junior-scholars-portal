@@ -65,6 +65,7 @@ const AdminDashboard = () => {
   const [linkParentDialog, setLinkParentDialog] = useState(false);
   const [feeDialog, setFeeDialog] = useState(false);
   const [createUserDialog, setCreateUserDialog] = useState(false);
+  const [createClassDialog, setCreateClassDialog] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   // Assign to class form
@@ -90,6 +91,13 @@ const AdminDashboard = () => {
   const [newUserFirstName, setNewUserFirstName] = useState('');
   const [newUserLastName, setNewUserLastName] = useState('');
   const [newUserRole, setNewUserRole] = useState<string>('learner');
+
+  // Create class form
+  const [newClassName, setNewClassName] = useState('');
+  const [newClassGrade, setNewClassGrade] = useState('');
+  const [newClassYear, setNewClassYear] = useState('2025-2026');
+  const [newClassCapacity, setNewClassCapacity] = useState('30');
+  const [newClassTeacher, setNewClassTeacher] = useState('');
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -323,6 +331,37 @@ const AdminDashboard = () => {
     }
   };
 
+  // Create new class
+  const handleCreateClass = async () => {
+    if (!newClassName || !newClassGrade) {
+      toast.error('Class name and grade level are required');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.from('classes').insert({
+        name: newClassName,
+        grade_level: parseInt(newClassGrade),
+        school_year: newClassYear,
+        capacity: parseInt(newClassCapacity) || 30,
+        teacher_id: newClassTeacher || null,
+      });
+      if (error) throw error;
+      toast.success('Class created successfully');
+      setCreateClassDialog(false);
+      setNewClassName('');
+      setNewClassGrade('');
+      setNewClassYear('2025-2026');
+      setNewClassCapacity('30');
+      setNewClassTeacher('');
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create class');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   // Unassign teacher from class
   const handleUnassignTeacher = async (classId: string) => {
     try {
@@ -491,12 +530,55 @@ const AdminDashboard = () => {
 
         {/* ========== CLASSES TAB ========== */}
         <TabsContent value="classes" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Class Assignments</h2>
-            <Dialog open={assignClassDialog} onOpenChange={setAssignClassDialog}>
-              <DialogTrigger asChild>
-                <Button><UserPlus className="h-4 w-4 mr-2" />Assign to Class</Button>
-              </DialogTrigger>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <h2 className="text-lg font-semibold">Class Management</h2>
+            <div className="flex gap-2">
+              <Dialog open={createClassDialog} onOpenChange={setCreateClassDialog}>
+                <DialogTrigger asChild>
+                  <Button variant="outline"><Plus className="h-4 w-4 mr-2" />Create Class</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>Create New Class</DialogTitle></DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Class Name</Label>
+                      <Input value={newClassName} onChange={e => setNewClassName(e.target.value)} placeholder="e.g., Grade 8A" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Grade Level</Label>
+                        <Input type="number" min="1" max="12" value={newClassGrade} onChange={e => setNewClassGrade(e.target.value)} placeholder="e.g., 8" />
+                      </div>
+                      <div>
+                        <Label>Capacity</Label>
+                        <Input type="number" value={newClassCapacity} onChange={e => setNewClassCapacity(e.target.value)} placeholder="30" />
+                      </div>
+                    </div>
+                    <div>
+                      <Label>School Year</Label>
+                      <Input value={newClassYear} onChange={e => setNewClassYear(e.target.value)} placeholder="2025-2026" />
+                    </div>
+                    <div>
+                      <Label>Assign Teacher (optional)</Label>
+                      <Select value={newClassTeacher} onValueChange={setNewClassTeacher}>
+                        <SelectTrigger><SelectValue placeholder="No teacher assigned" /></SelectTrigger>
+                        <SelectContent>
+                          {teachers.map(t => (
+                            <SelectItem key={t.user_id} value={t.user_id}>{t.full_name || t.email}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button onClick={handleCreateClass} disabled={submitting} className="w-full">
+                      {submitting ? 'Creating...' : 'Create Class'}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              <Dialog open={assignClassDialog} onOpenChange={setAssignClassDialog}>
+                <DialogTrigger asChild>
+                  <Button><UserPlus className="h-4 w-4 mr-2" />Assign to Class</Button>
+                </DialogTrigger>
               <DialogContent>
                 <DialogHeader><DialogTitle>Assign User to Class</DialogTitle></DialogHeader>
                 <div className="space-y-4">
@@ -538,6 +620,7 @@ const AdminDashboard = () => {
                 </div>
               </DialogContent>
             </Dialog>
+            </div>
           </div>
 
           {/* Classes with teachers */}
