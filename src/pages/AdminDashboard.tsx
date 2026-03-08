@@ -19,7 +19,10 @@ import { Navigate } from 'react-router-dom';
 interface UserProfile {
   user_id: string;
   full_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
   email: string | null;
+  phone: string | null;
   role: string;
   created_at: string;
 }
