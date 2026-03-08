@@ -18,9 +18,9 @@ const Index = () => {
       <div className="container mx-auto px-4 py-8 sm:py-12 md:py-16">
         <div className="text-center mb-8 sm:mb-12 md:mb-16">
           <div className="flex justify-center mb-4 sm:mb-6">
-            <GraduationCap className="h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 text-primary" />
+            <img src={schoolLogo} alt="E-School Logo" className="h-20 w-20 sm:h-24 sm:w-24 md:h-28 md:w-28 object-contain" />
           </div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 px-2">Junior Scholars Portal</h1>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 px-2">E-School Portal</h1>
           <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-6 sm:mb-8 px-4">
             A comprehensive learning management system designed for primary school learners, 
             parents, and teachers to track academic progress and manage educational activities.
