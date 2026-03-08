@@ -32,6 +32,9 @@ const NotFound = lazyRetry(() => import("./pages/NotFound"));
 const Communication = lazyRetry(() => import("./pages/Communication"));
 const Children = lazyRetry(() => import("./pages/Children"));
 const ProgressReports = lazyRetry(() => import("./pages/ProgressReports"));
+const Meetings = lazyRetry(() => import("./pages/Meetings"));
+const Fees = lazyRetry(() => import("./pages/Fees"));
+const Activity = lazyRetry(() => import("./pages/Activity"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
