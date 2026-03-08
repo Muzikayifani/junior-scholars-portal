@@ -165,6 +165,63 @@ const AdminDashboard = () => {
     setBulkLearners(updated);
   };
 
+  const handleExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const data = new Uint8Array(evt.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json<Record<string, string>>(sheet);
+        
+        if (rows.length === 0) {
+          toast.error('No data found in spreadsheet');
+          return;
+        }
+
+        // Map columns flexibly (case-insensitive, common variations)
+        const mapped = rows.map(row => {
+          const keys = Object.keys(row);
+          const find = (patterns: string[]) => {
+            const key = keys.find(k => patterns.some(p => k.toLowerCase().replace(/[_\s]/g, '').includes(p)));
+            return key ? String(row[key]).trim() : '';
+          };
+          return {
+            firstName: find(['firstname', 'first', 'name']) || find(['name']),
+            lastName: find(['lastname', 'last', 'surname']),
+            email: find(['email', 'mail']),
+          };
+        }).filter(r => r.firstName || r.lastName || r.email);
+
+        if (mapped.length === 0) {
+          toast.error('Could not find columns. Use headers: First Name, Last Name, Email');
+          return;
+        }
+
+        setBulkLearners(mapped);
+        toast.success(`Loaded ${mapped.length} rows from spreadsheet`);
+      } catch {
+        toast.error('Failed to parse spreadsheet');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    e.target.value = '';
+  };
+
+  const downloadTemplate = () => {
+    const ws = XLSX.utils.aoa_to_sheet([
+      ['First Name', 'Last Name', 'Email'],
+      ['John', 'Doe', 'john.doe@example.com'],
+      ['Jane', 'Smith', 'jane.smith@example.com'],
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Learners');
+    XLSX.writeFile(wb, 'bulk_learners_template.xlsx');
+  };
+
   const handleBulkAddLearners = async () => {
     if (!bulkClassId) { toast.error('Please select a class'); return; }
     const validRows = bulkLearners.filter(r => r.firstName && r.lastName && r.email);
