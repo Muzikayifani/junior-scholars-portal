@@ -56,6 +56,7 @@ const Communication: React.FC = () => {
   const isTeacher = profile?.role === "teacher";
   const isParent = profile?.role === "parent";
   const isLearner = profile?.role === "learner";
+  const isAdmin = profile?.role === "admin";
 
   useEffect(() => {
     if (!profile) return;
