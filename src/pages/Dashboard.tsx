@@ -203,12 +203,15 @@ const LearnerDashboard = () => {
 
         let averageGrade = 0;
         if (resultsData && resultsData.length > 0) {
-          const totalPercentage = resultsData.reduce((sum, result) => {
-            const assessment = result.assessment as any;
-            const percentage = (result.marks_obtained / assessment.total_marks) * 100;
-            return sum + percentage;
-          }, 0);
-          averageGrade = Math.round(totalPercentage / resultsData.length);
+          const validResults = resultsData.filter(r => r.assessment && (r.assessment as any).total_marks);
+          if (validResults.length > 0) {
+            const totalPercentage = validResults.reduce((sum, result) => {
+              const assessment = result.assessment as any;
+              const percentage = (result.marks_obtained / assessment.total_marks) * 100;
+              return sum + percentage;
+            }, 0);
+            averageGrade = Math.round(totalPercentage / validResults.length);
+          }
         }
 
         // Get next class from schedule
@@ -256,7 +259,7 @@ const LearnerDashboard = () => {
         })));
 
         // Set recent grades
-        setRecentGrades(resultsData?.slice(0, 3).map((r: any) => ({
+        setRecentGrades(resultsData?.filter((r: any) => r.assessment != null).slice(0, 3).map((r: any) => ({
           id: r.id,
           title: r.assessment.title,
           percentage: Math.round((r.marks_obtained / r.assessment.total_marks) * 100),
@@ -586,7 +589,7 @@ const ParentDashboard = () => {
         );
 
         // Get recent activity (last 5 graded results)
-        const recentResults = resultsData?.slice(0, 5).map((r: any) => {
+        const recentResults = resultsData?.filter((r: any) => r.assessment != null && r.learner != null).slice(0, 5).map((r: any) => {
           const learner = r.learner as any;
           const childProfile = profiles?.find(p => p.user_id === learner.user_id);
           const assessment = r.assessment as any;
