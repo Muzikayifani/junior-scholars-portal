@@ -55,6 +55,20 @@ interface ParentRelation {
   child?: { full_name: string | null; email: string | null };
 }
 
+interface FeeRecord {
+  id: string;
+  learner_user_id: string;
+  title: string;
+  description: string | null;
+  amount: number;
+  due_date: string;
+  status: string;
+  paid_at: string | null;
+  payment_reference: string | null;
+  created_at: string;
+  created_by: string;
+}
+
 const AdminDashboard = () => {
   const { profile, session } = useAuth();
   const [users, setUsers] = useState<UserProfile[]>([]);
