@@ -88,7 +88,6 @@ export function AppSidebar() {
       ];
     }
     return items;
-    }
   };
 
   const menuItems = getMenuItems();
