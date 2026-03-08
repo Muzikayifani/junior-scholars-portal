@@ -845,6 +845,98 @@ const AdminDashboard = () => {
               </div>
             </DialogContent>
           </Dialog>
+
+          {/* Bulk Add Learners Dialog */}
+          <Dialog open={bulkAddDialog} onOpenChange={setBulkAddDialog}>
+            <DialogContent className="max-w-3xl max-h-[90vh]">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2"><Upload className="h-5 w-5" />Bulk Add Learners</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label>Assign to Class</Label>
+                  <Select value={bulkClassId} onValueChange={setBulkClassId}>
+                    <SelectTrigger><SelectValue placeholder="Select a class" /></SelectTrigger>
+                    <SelectContent>
+                      {classes.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.name} (Grade {c.grade_level})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <ScrollArea className="max-h-[300px]">
+                  <div className="space-y-3">
+                    {bulkLearners.map((row, i) => (
+                      <div key={i} className="flex items-end gap-2">
+                        <div className="flex-1">
+                          {i === 0 && <Label className="text-xs">First Name</Label>}
+                          <Input placeholder="First name" value={row.firstName} onChange={e => updateBulkRow(i, 'firstName', e.target.value)} />
+                        </div>
+                        <div className="flex-1">
+                          {i === 0 && <Label className="text-xs">Last Name</Label>}
+                          <Input placeholder="Last name" value={row.lastName} onChange={e => updateBulkRow(i, 'lastName', e.target.value)} />
+                        </div>
+                        <div className="flex-1">
+                          {i === 0 && <Label className="text-xs">Email</Label>}
+                          <Input type="email" placeholder="email@example.com" value={row.email} onChange={e => updateBulkRow(i, 'email', e.target.value)} />
+                        </div>
+                        <Button variant="ghost" size="icon" onClick={() => removeBulkRow(i)} disabled={bulkLearners.length === 1} className="shrink-0">
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={addBulkRow} disabled={bulkSubmitting}>
+                    <Plus className="h-4 w-4 mr-1" />Add Row
+                  </Button>
+                  <Button onClick={handleBulkAddLearners} disabled={bulkSubmitting} className="ml-auto">
+                    {bulkSubmitting ? 'Creating...' : `Create ${bulkLearners.filter(r => r.firstName && r.lastName && r.email).length} Learner(s)`}
+                  </Button>
+                </div>
+
+                {bulkResults.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-semibold text-sm">Results</h4>
+                      <Button variant="outline" size="sm" onClick={downloadBulkResults}>
+                        <Download className="h-4 w-4 mr-1" />Download CSV
+                      </Button>
+                    </div>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Student Number</TableHead>
+                          <TableHead>Temp Password</TableHead>
+                          <TableHead>Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {bulkResults.map((r, i) => (
+                          <TableRow key={i}>
+                            <TableCell className="font-medium">{r.name}</TableCell>
+                            <TableCell>{r.studentNumber || '—'}</TableCell>
+                            <TableCell className="font-mono text-xs">{r.tempPassword || '—'}</TableCell>
+                            <TableCell>
+                              {r.error ? (
+                                <Badge variant="destructive" className="text-xs">{r.error}</Badge>
+                              ) : (
+                                <Badge className="bg-success text-success-foreground text-xs">Success</Badge>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         {/* ========== CLASSES TAB ========== */}
