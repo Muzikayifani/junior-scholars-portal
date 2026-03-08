@@ -35,6 +35,7 @@ interface StudentInfo {
 
 const FeeTracker = () => {
   const { profile } = useAuth();
+  const isAdmin = profile?.role === 'admin';
   const isTeacher = profile?.role === 'teacher';
   const [fees, setFees] = useState<Fee[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,18 +68,11 @@ const FeeTracker = () => {
   }, [profile?.user_id]);
 
   const fetchStudents = useCallback(async () => {
-    if (!profile?.user_id || !isTeacher) return;
-    const { data: classes } = await supabase
-      .from('classes')
-      .select('id')
-      .eq('teacher_id', profile.user_id);
-    if (!classes || classes.length === 0) return;
-
-    const classIds = classes.map(c => c.id);
+    if (!profile?.user_id || !isAdmin) return;
+    // Admins can see all learners
     const { data: learners } = await supabase
       .from('learners')
-      .select('user_id, profiles:profiles!fk_learners_user_id(full_name)')
-      .in('class_id', classIds);
+      .select('user_id, profiles:profiles!fk_learners_user_id(full_name)');
 
     if (learners) {
       const unique = new Map<string, StudentInfo>();
@@ -89,7 +83,7 @@ const FeeTracker = () => {
       });
       setStudents(Array.from(unique.values()));
     }
-  }, [profile?.user_id, isTeacher]);
+  }, [profile?.user_id, isAdmin]);
 
   useEffect(() => {
     fetchFees();
@@ -158,10 +152,10 @@ const FeeTracker = () => {
         <div>
           <h2 className="text-2xl font-bold">Fee Tracking</h2>
           <p className="text-muted-foreground">
-            {isTeacher ? 'Manage student fees and payments' : 'View your children\'s fee status'}
+            {isAdmin ? 'Manage student fees and payments' : isTeacher ? 'View fees for your students' : 'View your children\'s fee status'}
           </p>
         </div>
-        {isTeacher && (
+        {isAdmin && (
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button><Plus className="h-4 w-4 mr-2" />Create Fee</Button>
@@ -271,7 +265,7 @@ const FeeTracker = () => {
                   <TableHead>Amount</TableHead>
                   <TableHead>Due Date</TableHead>
                   <TableHead>Status</TableHead>
-                  {isTeacher && <TableHead>Actions</TableHead>}
+                  {isAdmin && <TableHead>Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -290,7 +284,7 @@ const FeeTracker = () => {
                       <TableCell>
                         <Badge className={sc.color}>{fee.status}</Badge>
                       </TableCell>
-                      {isTeacher && (
+                      {isAdmin && (
                         <TableCell>
                           {fee.status !== 'paid' && (
                             <Button size="sm" variant="outline" onClick={() => handleMarkPaid(fee.id)}>
