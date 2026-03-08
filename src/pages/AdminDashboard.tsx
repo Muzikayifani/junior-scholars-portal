@@ -147,6 +147,67 @@ const AdminDashboard = () => {
   const [editPhone, setEditPhone] = useState('');
   const [editPassword, setEditPassword] = useState('');
 
+  // Bulk add learners
+  const [bulkAddDialog, setBulkAddDialog] = useState(false);
+  const [bulkClassId, setBulkClassId] = useState('');
+  const [bulkLearners, setBulkLearners] = useState<Array<{ firstName: string; lastName: string; email: string }>>([
+    { firstName: '', lastName: '', email: '' }
+  ]);
+  const [bulkResults, setBulkResults] = useState<Array<{ name: string; studentNumber: string; tempPassword: string; error?: string }>>([]);
+  const [bulkSubmitting, setBulkSubmitting] = useState(false);
+
+  const addBulkRow = () => setBulkLearners([...bulkLearners, { firstName: '', lastName: '', email: '' }]);
+  const removeBulkRow = (index: number) => setBulkLearners(bulkLearners.filter((_, i) => i !== index));
+  const updateBulkRow = (index: number, field: string, value: string) => {
+    const updated = [...bulkLearners];
+    updated[index] = { ...updated[index], [field]: value };
+    setBulkLearners(updated);
+  };
+
+  const handleBulkAddLearners = async () => {
+    if (!bulkClassId) { toast.error('Please select a class'); return; }
+    const validRows = bulkLearners.filter(r => r.firstName && r.lastName && r.email);
+    if (validRows.length === 0) { toast.error('Add at least one complete learner row'); return; }
+    
+    setBulkSubmitting(true);
+    setBulkResults([]);
+    const results: typeof bulkResults = [];
+
+    for (const row of validRows) {
+      try {
+        const response = await supabase.functions.invoke('create-student', {
+          body: { firstName: row.firstName, lastName: row.lastName, email: row.email, classId: bulkClassId }
+        });
+        if (response.error) throw new Error(response.error.message);
+        const data = response.data;
+        if (!data.success) throw new Error(data.error);
+        results.push({ name: `${row.firstName} ${row.lastName}`, studentNumber: data.data.studentNumber, tempPassword: data.data.tempPassword });
+      } catch (err: any) {
+        results.push({ name: `${row.firstName} ${row.lastName}`, studentNumber: '', tempPassword: '', error: err.message });
+      }
+    }
+
+    setBulkResults(results);
+    const successCount = results.filter(r => !r.error).length;
+    const failCount = results.filter(r => r.error).length;
+    if (successCount > 0) toast.success(`${successCount} learner(s) created successfully`);
+    if (failCount > 0) toast.error(`${failCount} learner(s) failed`);
+    
+    setBulkSubmitting(false);
+    fetchData();
+  };
+
+  const downloadBulkResults = () => {
+    const csv = 'Name,Student Number,Temp Password,Status\n' + bulkResults.map(r => 
+      `"${r.name}","${r.studentNumber}","${r.tempPassword}","${r.error || 'Success'}"`
+    ).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'bulk_learners_results.csv'; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
