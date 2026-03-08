@@ -209,7 +209,6 @@ const Communication: React.FC = () => {
     if (!profile || !isLearner) return;
     
     const loadTeachers = async () => {
-      // Get learner's class(es)
       const { data: learnerData } = await supabase
         .from("learners")
         .select("class_id")
@@ -218,8 +217,6 @@ const Communication: React.FC = () => {
 
       if (learnerData && learnerData.length > 0) {
         const classIds = learnerData.map(l => l.class_id);
-        
-        // Get teachers for these classes
         const { data: classData } = await supabase
           .from("classes")
           .select("id, name, teacher_id")
@@ -227,7 +224,6 @@ const Communication: React.FC = () => {
 
         if (classData && classData.length > 0) {
           const teacherIds = [...new Set(classData.map(c => c.teacher_id).filter(Boolean))];
-          
           const { data: teacherProfiles } = await supabase
             .from("profiles")
             .select("user_id, full_name")
@@ -245,6 +241,25 @@ const Communication: React.FC = () => {
     
     loadTeachers();
   }, [isLearner, profile]);
+
+  // Load all teachers for admin
+  useEffect(() => {
+    if (!profile || !isAdmin) return;
+    
+    const loadAllTeachers = async () => {
+      const { data: teacherProfiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .eq("role", "teacher");
+
+      setTeachers(teacherProfiles?.map(t => ({
+        ...t,
+        className: "Teacher"
+      })) || []);
+    };
+    
+    loadAllTeachers();
+  }, [isAdmin, profile]);
 
   // Load learners when class is selected
   useEffect(() => {
