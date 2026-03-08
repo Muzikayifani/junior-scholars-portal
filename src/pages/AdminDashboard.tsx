@@ -541,6 +541,7 @@ const AdminDashboard = () => {
                     <TableHead>Role</TableHead>
                     <TableHead>Joined</TableHead>
                     <TableHead>Change Role</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -567,10 +568,15 @@ const AdminDashboard = () => {
                           <span className="text-xs text-muted-foreground">Current user</span>
                         )}
                       </TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="sm" onClick={() => openEditUser(user)}>
+                          <Pencil className="h-4 w-4 mr-1" />Edit
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                   {filteredUsers.length === 0 && (
-                    <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No users found</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No users found</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
