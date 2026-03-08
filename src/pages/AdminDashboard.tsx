@@ -521,6 +521,60 @@ const AdminDashboard = () => {
     }
   };
 
+  // Open edit class dialog
+  const openEditClass = (cls: ClassInfo) => {
+    setEditClassId(cls.id);
+    setEditClassName(cls.name);
+    setEditClassGrade(String(cls.grade_level));
+    setEditClassYear(cls.school_year);
+    setEditClassCapacity('30');
+    setEditClassTeacher(cls.teacher_id || '');
+    setEditClassDialog(true);
+  };
+
+  // Update class
+  const handleUpdateClass = async () => {
+    if (!editClassName || !editClassGrade) {
+      toast.error('Class name and grade level are required');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.from('classes').update({
+        name: editClassName,
+        grade_level: parseInt(editClassGrade),
+        school_year: editClassYear,
+        capacity: parseInt(editClassCapacity) || 30,
+        teacher_id: editClassTeacher || null,
+      }).eq('id', editClassId);
+      if (error) throw error;
+      toast.success('Class updated');
+      setEditClassDialog(false);
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update class');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Delete class
+  const handleDeleteClass = async (classId: string) => {
+    const classLearners = learners.filter(l => l.class_id === classId);
+    if (classLearners.length > 0) {
+      toast.error('Remove all learners from this class before deleting');
+      return;
+    }
+    try {
+      const { error } = await supabase.from('classes').delete().eq('id', classId);
+      if (error) throw error;
+      toast.success('Class deleted');
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete class');
+    }
+  };
+
   // Unassign teacher from class
   const handleUnassignTeacher = async (classId: string) => {
     try {
