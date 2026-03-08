@@ -1,8 +1,9 @@
 import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { GraduationCap, BookOpen, Users, Award } from 'lucide-react';
+import { BookOpen, Users, Award } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import schoolLogo from '@/assets/school_logo.png';
 
 const Index = () => {
   const { user } = useAuth();
