@@ -923,6 +923,41 @@ const AdminDashboard = () => {
                   </Select>
                 </div>
 
+                {/* Excel Upload Section */}
+                <div className="rounded-lg border border-dashed border-muted-foreground/30 p-4 space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <FileSpreadsheet className="h-4 w-4 text-primary" />
+                    Import from Excel / CSV
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    <label htmlFor="excel-upload">
+                      <Button variant="outline" size="sm" asChild disabled={bulkSubmitting}>
+                        <span><Upload className="h-4 w-4 mr-1" />Upload Spreadsheet</span>
+                      </Button>
+                    </label>
+                    <input
+                      id="excel-upload"
+                      type="file"
+                      className="hidden"
+                      accept=".xlsx,.xls,.csv"
+                      onChange={handleExcelUpload}
+                      disabled={bulkSubmitting}
+                    />
+                    <Button variant="ghost" size="sm" onClick={downloadTemplate}>
+                      <Download className="h-4 w-4 mr-1" />Download Template
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Excel columns: <strong>First Name</strong>, <strong>Last Name</strong>, <strong>Email</strong>
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="h-px flex-1 bg-border" />
+                  <span className="text-xs text-muted-foreground">or add manually</span>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
+
                 <ScrollArea className="max-h-[300px]">
                   <div className="space-y-3">
                     {bulkLearners.map((row, i) => (
