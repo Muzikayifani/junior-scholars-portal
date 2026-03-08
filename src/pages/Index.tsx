@@ -1,8 +1,9 @@
 import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { GraduationCap, BookOpen, Users, Award } from 'lucide-react';
+import { BookOpen, Users, Award } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import schoolLogo from '@/assets/school_logo.png';
 
 const Index = () => {
   const { user } = useAuth();
@@ -17,9 +18,9 @@ const Index = () => {
       <div className="container mx-auto px-4 py-8 sm:py-12 md:py-16">
         <div className="text-center mb-8 sm:mb-12 md:mb-16">
           <div className="flex justify-center mb-4 sm:mb-6">
-            <GraduationCap className="h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 text-primary" />
+            <img src={schoolLogo} alt="E-School Logo" className="h-20 w-20 sm:h-24 sm:w-24 md:h-28 md:w-28 object-contain" />
           </div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 px-2">Junior Scholars Portal</h1>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 px-2">E-School Portal</h1>
           <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-6 sm:mb-8 px-4">
             A comprehensive learning management system designed for primary school learners, 
             parents, and teachers to track academic progress and manage educational activities.
@@ -87,7 +88,7 @@ const Index = () => {
 
         <div className="text-center px-4">
           <p className="text-muted-foreground mb-4 text-sm sm:text-base">
-            Ready to join the Junior Scholars community?
+            Ready to join the E-School community?
           </p>
           <Button variant="outline" size="lg" asChild className="w-full sm:w-auto max-w-xs">
             <a href="/auth">Sign In / Create Account</a>
