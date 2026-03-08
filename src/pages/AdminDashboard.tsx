@@ -92,6 +92,13 @@ const AdminDashboard = () => {
   const [newUserLastName, setNewUserLastName] = useState('');
   const [newUserRole, setNewUserRole] = useState<string>('learner');
 
+  // Create class form
+  const [newClassName, setNewClassName] = useState('');
+  const [newClassGrade, setNewClassGrade] = useState('');
+  const [newClassYear, setNewClassYear] = useState('2025-2026');
+  const [newClassCapacity, setNewClassCapacity] = useState('30');
+  const [newClassTeacher, setNewClassTeacher] = useState('');
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
