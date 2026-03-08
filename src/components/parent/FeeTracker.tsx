@@ -68,18 +68,11 @@ const FeeTracker = () => {
   }, [profile?.user_id]);
 
   const fetchStudents = useCallback(async () => {
-    if (!profile?.user_id || !isTeacher) return;
-    const { data: classes } = await supabase
-      .from('classes')
-      .select('id')
-      .eq('teacher_id', profile.user_id);
-    if (!classes || classes.length === 0) return;
-
-    const classIds = classes.map(c => c.id);
+    if (!profile?.user_id || !isAdmin) return;
+    // Admins can see all learners
     const { data: learners } = await supabase
       .from('learners')
-      .select('user_id, profiles:profiles!fk_learners_user_id(full_name)')
-      .in('class_id', classIds);
+      .select('user_id, profiles:profiles!fk_learners_user_id(full_name)');
 
     if (learners) {
       const unique = new Map<string, StudentInfo>();
@@ -90,7 +83,7 @@ const FeeTracker = () => {
       });
       setStudents(Array.from(unique.values()));
     }
-  }, [profile?.user_id, isTeacher]);
+  }, [profile?.user_id, isAdmin]);
 
   useEffect(() => {
     fetchFees();
