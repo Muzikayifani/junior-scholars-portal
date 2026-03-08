@@ -740,11 +740,11 @@ const Communication: React.FC = () => {
                     </Select>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    A conversation will be started with your teacher.
+                    {isAdmin ? "Start a conversation with a teacher." : "A conversation will be started with your teacher."}
                   </p>
                   {teachers.length === 0 && (
-                    <p className="text-xs text-amber-600">
-                      No teachers found. Make sure you are enrolled in a class.
+                    <p className="text-xs text-warning">
+                      {isAdmin ? "No teachers found in the system." : "No teachers found. Make sure you are enrolled in a class."}
                     </p>
                   )}
                 </>
