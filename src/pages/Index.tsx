@@ -58,15 +58,24 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          <Card className="group cursor-pointer transition-all duration-300 hover:shadow-[0_0_20px_hsl(var(--orange-glow)/0.4)] hover:border-[hsl(var(--orange-glow))] hover:scale-105">
-            <CardHeader className="text-center">
+          <Card className="group cursor-pointer transition-all duration-300 hover:shadow-[0_0_20px_hsl(var(--orange-glow)/0.4)] hover:border-[hsl(var(--orange-glow))] hover:scale-105 relative overflow-hidden">
+            {/* Animated dots for Parents */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+              <div className="absolute w-3 h-3 bg-[hsl(var(--orange-glow)/.4)] rounded-full animate-[float-dot-1_3.5s_ease-in-out_infinite] top-4 left-6" />
+              <div className="absolute w-2 h-2 bg-[hsl(var(--orange-glow)/.5)] rounded-full animate-[float-dot-2_4.2s_ease-in-out_infinite] top-12 right-8" />
+              <div className="absolute w-3.5 h-3.5 bg-[hsl(var(--orange-glow)/.35)] rounded-full animate-[float-dot-1_5s_ease-in-out_infinite_0.8s] bottom-6 left-1/4" />
+              <div className="absolute w-2.5 h-2.5 bg-[hsl(var(--orange-glow)/.45)] rounded-full animate-[float-dot-2_3.8s_ease-in-out_infinite_0.3s] top-1/3 right-1/3" />
+              <div className="absolute w-2 h-2 bg-[hsl(var(--orange-glow)/.5)] rounded-full animate-[float-dot-1_4.5s_ease-in-out_infinite_1.2s] bottom-10 right-6" />
+              <div className="absolute w-3 h-3 bg-[hsl(var(--orange-glow)/.3)] rounded-full animate-[float-dot-2_4s_ease-in-out_infinite_0.5s] top-6 left-1/2" />
+            </div>
+            <CardHeader className="text-center relative z-10">
               <Users className="h-12 w-12 text-primary mx-auto mb-4 group-hover:text-[hsl(var(--orange-glow))] transition-colors duration-300" />
               <CardTitle className="group-hover:text-[hsl(var(--orange-glow))] transition-colors duration-300">For Parents</CardTitle>
               <CardDescription>
                 Monitor your children's academic journey
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="relative z-10">
               <ul className="text-sm text-muted-foreground space-y-2">
                 <li>• Track children's progress</li>
                 <li>• View assessment results</li>
