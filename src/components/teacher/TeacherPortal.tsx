@@ -194,35 +194,35 @@ const TeacherPortal = () => {
         <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Manage your classes, assessments, and schedule</p>
       </div>
 
-      {/* Quick Stats - compact on mobile */}
+      {/* Quick Stats - horizontal scroll on mobile, grid on desktop */}
       {loading ? (
-        <div className="grid gap-2 sm:gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-3 md:gap-4">
           {[1,2,3,4].map(i => (
-            <Card key={i} className="glass-card"><CardContent className="p-3 sm:pt-6"><LoadingSpinner size="sm" /></CardContent></Card>
+            <Card key={i} className="glass-card min-w-[140px] sm:min-w-0 shrink-0 sm:shrink"><CardContent className="p-3"><LoadingSpinner size="sm" /></CardContent></Card>
           ))}
         </div>
       ) : (
-        <div className="grid gap-2 sm:gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4 animate-scale-in">
-          <Card className="hover-lift hover-glow glass-card">
-            <CardContent className="p-2.5 sm:p-4 md:p-6">
-              <div className="flex items-center justify-between mb-1">
-                <p className="text-[10px] sm:text-xs md:text-sm font-medium text-muted-foreground">My Classes</p>
-                <BookOpen className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-              </div>
-              <div className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">{stats.classesCount}</div>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">Active classes</p>
-            </CardContent>
-          </Card>
-          <Card className="hover-lift hover-glow glass-card">
-            <CardContent className="p-2.5 sm:p-4 md:p-6">
-              <div className="flex items-center justify-between mb-1">
-                <p className="text-[10px] sm:text-xs md:text-sm font-medium text-muted-foreground">Pending Grading</p>
-                <ClipboardList className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-              </div>
-              <div className="text-lg sm:text-xl md:text-2xl font-bold text-destructive">{stats.pendingGrading}</div>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">Assignments to grade</p>
-            </CardContent>
-          </Card>
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-3 md:gap-4 animate-scale-in pb-1">
+          {[
+            { label: 'My Classes', value: stats.classesCount, sub: 'Active classes', icon: BookOpen, color: 'bg-gradient-primary bg-clip-text text-transparent' },
+            { label: 'Students', value: stats.studentsCount, sub: 'Across all classes', icon: Users, color: 'text-info' },
+            { label: 'Pending', value: stats.pendingGrading, sub: 'To grade', icon: ClipboardList, color: 'text-destructive' },
+            { label: 'Average', value: `${stats.averagePerformance}%`, sub: 'Class average', icon: Award, color: 'text-success' },
+          ].map((stat) => {
+            const Icon = stat.icon;
+            return (
+              <Card key={stat.label} className="hover-lift hover-glow glass-card min-w-[130px] sm:min-w-0 shrink-0 sm:shrink">
+                <CardContent className="p-2.5 sm:p-4 md:p-6">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-[10px] sm:text-xs md:text-sm font-medium text-muted-foreground truncate">{stat.label}</p>
+                    <Icon className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0 ml-1" />
+                  </div>
+                  <div className={cn("text-lg sm:text-xl md:text-2xl font-bold", stat.color)}>{stat.value}</div>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">{stat.sub}</p>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 
