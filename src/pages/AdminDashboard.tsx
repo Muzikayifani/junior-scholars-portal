@@ -545,7 +545,7 @@ const AdminDashboard = () => {
         grade_level: parseInt(editClassGrade),
         school_year: editClassYear,
         capacity: parseInt(editClassCapacity) || 30,
-        teacher_id: editClassTeacher || null,
+        teacher_id: editClassTeacher && editClassTeacher !== 'none' ? editClassTeacher : null,
       }).eq('id', editClassId);
       if (error) throw error;
       toast.success('Class updated');
