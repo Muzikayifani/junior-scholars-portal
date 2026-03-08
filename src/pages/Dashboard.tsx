@@ -586,7 +586,7 @@ const ParentDashboard = () => {
         );
 
         // Get recent activity (last 5 graded results)
-        const recentResults = resultsData?.slice(0, 5).map((r: any) => {
+        const recentResults = resultsData?.filter((r: any) => r.assessment != null && r.learner != null).slice(0, 5).map((r: any) => {
           const learner = r.learner as any;
           const childProfile = profiles?.find(p => p.user_id === learner.user_id);
           const assessment = r.assessment as any;
