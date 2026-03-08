@@ -427,7 +427,6 @@ const AdminDashboard = () => {
               </DialogContent>
             </Dialog>
           </div>
-          </div>
           <Card className="glass-card">
             <CardContent className="p-0">
               <Table>
