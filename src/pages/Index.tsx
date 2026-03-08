@@ -15,12 +15,16 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+      {/* Header with logo */}
+      <header className="w-full py-4 sm:py-6 border-b bg-card/80 backdrop-blur-sm">
+        <div className="container mx-auto px-4 flex items-center justify-center gap-4">
+          <img src={schoolLogo} alt="E-School Logo" className="h-16 w-auto sm:h-20 md:h-24 object-contain" />
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary">E-School</h1>
+        </div>
+      </header>
+
       <div className="container mx-auto px-4 py-8 sm:py-12 md:py-16">
         <div className="text-center mb-8 sm:mb-12 md:mb-16">
-          <div className="flex justify-center mb-4 sm:mb-6">
-            <img src={schoolLogo} alt="E-School Logo" className="h-20 w-20 sm:h-24 sm:w-24 md:h-28 md:w-28 object-contain" />
-          </div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 px-2">E-School Portal</h1>
           <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-6 sm:mb-8 px-4">
             A comprehensive learning management system designed for Learners, 
             Parents, and Teachers to track academic progress and manage educational activities.
