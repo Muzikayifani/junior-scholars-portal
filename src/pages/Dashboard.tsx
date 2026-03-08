@@ -790,6 +790,51 @@ const Dashboard = () => {
   }
 
   switch (profile.role) {
+    case 'admin':
+      return (
+        <div className="space-y-4 sm:space-y-6 animate-fade-in">
+          <div className="animate-slide-up">
+            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">Admin Dashboard</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">Manage users, classes, and system settings</p>
+          </div>
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            <Card className="hover-lift hover-glow glass-card cursor-pointer" onClick={() => window.location.href = '/admin'}>
+              <CardContent className="p-6 flex items-center gap-4">
+                <div className="p-3 rounded-full bg-primary/10">
+                  <Users className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold">Manage Users</p>
+                  <p className="text-xs text-muted-foreground">View and edit user accounts & roles</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="hover-lift hover-glow glass-card cursor-pointer" onClick={() => window.location.href = '/admin'}>
+              <CardContent className="p-6 flex items-center gap-4">
+                <div className="p-3 rounded-full bg-accent/50">
+                  <BookOpen className="h-6 w-6 text-accent-foreground" />
+                </div>
+                <div>
+                  <p className="font-semibold">Manage Classes</p>
+                  <p className="text-xs text-muted-foreground">Create and organize classes</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="hover-lift hover-glow glass-card cursor-pointer" onClick={() => window.location.href = '/settings'}>
+              <CardContent className="p-6 flex items-center gap-4">
+                <div className="p-3 rounded-full bg-muted">
+                  <Calendar className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="font-semibold">System Settings</p>
+                  <p className="text-xs text-muted-foreground">Configure platform settings</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          <AnnouncementsFeed />
+        </div>
+      );
     case 'parent':
       return <ParentDashboard />;
     case 'teacher':
