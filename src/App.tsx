@@ -36,6 +36,7 @@ const ProgressReports = lazyRetry(() => import("./pages/ProgressReports"));
 const Meetings = lazyRetry(() => import("./pages/Meetings"));
 const Fees = lazyRetry(() => import("./pages/Fees"));
 const Activity = lazyRetry(() => import("./pages/Activity"));
+const AdminDashboard = lazyRetry(() => import("./pages/AdminDashboard"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
