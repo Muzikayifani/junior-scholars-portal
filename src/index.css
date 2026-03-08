@@ -8,53 +8,56 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Educational color palette - bright and engaging */
-    --background: 210 20% 98%;
-    --foreground: 224 71.4% 4.1%;
+    /* South Africa Inspired Brand Colors */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 7%;
 
     --card: 0 0% 100%;
-    --card-foreground: 224 71.4% 4.1%;
+    --card-foreground: 0 0% 7%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 224 71.4% 4.1%;
+    --popover-foreground: 0 0% 7%;
 
-    --primary: 220 91% 56%;
-    --primary-foreground: 210 40% 98%;
+    /* Learning Blue - headings, navigation */
+    --primary: 223 72% 42%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 215 100% 95%;
-    --secondary-foreground: 224 71.4% 4.1%;
+    /* Ubuntu Green tinted secondary */
+    --secondary: 157 40% 95%;
+    --secondary-foreground: 0 0% 7%;
 
-    --muted: 220 14.3% 95.9%;
-    --muted-foreground: 220 8.9% 46.1%;
+    --muted: 210 12% 95%;
+    --muted-foreground: 210 8% 46%;
 
-    --accent: 206 100% 88%;
-    --accent-foreground: 224 71.4% 4.1%;
+    --accent: 40 100% 93%;
+    --accent-foreground: 0 0% 7%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Energy Red */
+    --destructive: 2 72% 54%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 220 91% 56%;
+    --border: 210 12% 90%;
+    --input: 210 12% 90%;
+    --ring: 223 72% 42%;
 
     --radius: 0.75rem;
 
-    /* Sidebar colors for professional look */
-    --sidebar-background: 220 27% 98%;
-    --sidebar-foreground: 220 8.9% 46.1%;
-    --sidebar-primary: 220 91% 56%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 220 14.3% 95.9%;
-    --sidebar-accent-foreground: 220 8.9% 46.1%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 220 91% 56%;
+    /* Sidebar - Learning Blue themed */
+    --sidebar-background: 223 30% 97%;
+    --sidebar-foreground: 210 8% 46%;
+    --sidebar-primary: 223 72% 42%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 223 20% 94%;
+    --sidebar-accent-foreground: 210 8% 46%;
+    --sidebar-border: 210 12% 90%;
+    --sidebar-ring: 223 72% 42%;
 
-    /* Gradients for modern appeal */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(220 91% 66%));
-    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)), hsl(215 100% 85%));
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(223 72% 42%), hsl(223 72% 55%));
+    --gradient-secondary: linear-gradient(135deg, hsl(157 100% 24%), hsl(157 80% 35%));
     
-    /* Modern animations and effects */
-    --orange-glow: 25 95% 53%;
+    /* Knowledge Gold for glows and highlights */
+    --orange-glow: 40 100% 55%;
     --shadow-orange-glow: 0 0 20px hsl(var(--orange-glow) / 0.4);
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
@@ -64,11 +67,11 @@ All colors MUST be HSL.
     --glass-border: hsl(var(--border) / 0.2);
     --backdrop-blur: blur(12px);
     
-    /* Success and info colors */
-    --success: 142 76% 36%;
-    --success-foreground: 355 7% 97%;
-    --info: 200 98% 39%;
-    --info-foreground: 355 7% 97%;
+    /* Ubuntu Green for success */
+    --success: 157 100% 24%;
+    --success-foreground: 0 0% 100%;
+    --info: 223 72% 42%;
+    --info-foreground: 0 0% 100%;
     
     /* Animation durations */
     --duration-fast: 150ms;
