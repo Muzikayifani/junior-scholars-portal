@@ -1,4 +1,5 @@
 import { useAuth } from '@/hooks/useAuth';
+import AnnouncementsFeed from '@/components/AnnouncementsFeed';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import TeacherPortal from '@/components/teacher/TeacherPortal';
