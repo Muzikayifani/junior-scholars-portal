@@ -249,8 +249,8 @@ const ManageStudents = () => {
 
       toast({
         title: "Success",
-        description: `Student added successfully! Temporary password: ${result.data.tempPassword} (Please save this and share with the student)`,
-        duration: 15000, // Show for 15 seconds so teacher can copy it
+        description: `Student created! Student Number: ${result.data.studentNumber} | Temp Password: ${result.data.tempPassword}`,
+        duration: 20000,
       });
       
       setShowAddStudent(false);
