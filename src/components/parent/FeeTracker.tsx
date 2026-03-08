@@ -284,7 +284,7 @@ const FeeTracker = () => {
                       <TableCell>
                         <Badge className={sc.color}>{fee.status}</Badge>
                       </TableCell>
-                      {isTeacher && (
+                      {isAdmin && (
                         <TableCell>
                           {fee.status !== 'paid' && (
                             <Button size="sm" variant="outline" onClick={() => handleMarkPaid(fee.id)}>
