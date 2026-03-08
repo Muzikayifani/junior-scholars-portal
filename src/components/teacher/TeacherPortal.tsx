@@ -349,6 +349,10 @@ const TeacherPortal = () => {
           <TeacherReports />
         </TabsContent>
         
+        <TabsContent value="report-cards" className="space-y-4 animate-fade-in">
+          <ReportCardGenerator />
+        </TabsContent>
+        
         <TabsContent value="attendance" className="space-y-4 animate-fade-in">
           <AttendanceMarking />
         </TabsContent>
