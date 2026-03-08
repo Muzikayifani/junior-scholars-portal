@@ -88,7 +88,7 @@ const Index = () => {
 
         <div className="text-center px-4">
           <p className="text-muted-foreground mb-4 text-sm sm:text-base">
-            Ready to join the Junior Scholars community?
+            Ready to join the E-School community?
           </p>
           <Button variant="outline" size="lg" asChild className="w-full sm:w-auto max-w-xs">
             <a href="/auth">Sign In / Create Account</a>
