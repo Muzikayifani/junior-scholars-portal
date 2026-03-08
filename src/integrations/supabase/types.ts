@@ -790,6 +790,7 @@ export type Database = {
           child_user_id: string
         }[]
       }
+      is_admin: { Args: never; Returns: boolean }
       is_parent: { Args: never; Returns: boolean }
       is_teacher: { Args: never; Returns: boolean }
       learner_has_result_for_assessment: {
