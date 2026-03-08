@@ -242,7 +242,7 @@ const TeacherPortal = () => {
 
       <Tabs defaultValue="assessments" className="w-full animate-bounce-in">
         <div className="overflow-x-auto -mx-3 sm:-mx-4 md:mx-0 px-3 sm:px-4 md:px-0">
-          <TabsList className="inline-flex w-max min-w-full md:w-full md:grid md:grid-cols-5 lg:grid-cols-9 glass-card gap-1">
+          <TabsList className="inline-flex w-max min-w-full md:w-full md:grid md:grid-cols-5 lg:grid-cols-11 glass-card gap-1">
             <TabsTrigger value="assessments" className="flex items-center gap-1 sm:gap-2 transition-all duration-200 hover:scale-105 text-xs sm:text-sm px-2 sm:px-3">
               <ClipboardList className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
               <span>Create</span>
