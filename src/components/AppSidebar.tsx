@@ -58,6 +58,8 @@ const getTeacherMenuItems = () => [
   { title: "Assessments", url: "/assessments", icon: ClipboardList },
   { title: "Results", url: "/results", icon: Award },
   { title: "Schedule", url: "/schedule", icon: Calendar },
+  { title: "Meetings", url: "/meetings", icon: CalendarClock },
+  { title: "Fees", url: "/fees", icon: DollarSign },
   { title: "Communication", url: "/communication", icon: FileText },
 ];
 
