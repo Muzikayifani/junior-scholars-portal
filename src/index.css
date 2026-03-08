@@ -233,4 +233,13 @@ All colors MUST be HSL.
   .bg-gradient-secondary {
     background: var(--gradient-secondary);
   }
+
+  /* Hide scrollbar */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }

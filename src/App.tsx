@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { ThemeProvider } from "next-themes";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { lazy, Suspense } from "react";
 import Layout from "./components/Layout";
@@ -35,6 +36,7 @@ const ProgressReports = lazyRetry(() => import("./pages/ProgressReports"));
 const Meetings = lazyRetry(() => import("./pages/Meetings"));
 const Fees = lazyRetry(() => import("./pages/Fees"));
 const Activity = lazyRetry(() => import("./pages/Activity"));
+const AdminDashboard = lazyRetry(() => import("./pages/AdminDashboard"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -47,9 +49,10 @@ const queryClient = new QueryClient({
 
 const App = () => (
   <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TooltipProvider>
           <Toaster />
           <Sonner />
           <BrowserRouter>
@@ -72,6 +75,7 @@ const App = () => (
                 <Route path="/meetings" element={<Layout><Meetings /></Layout>} />
                 <Route path="/fees" element={<Layout><Fees /></Layout>} />
                 <Route path="/activity" element={<Layout><Activity /></Layout>} />
+                <Route path="/admin" element={<Layout><AdminDashboard /></Layout>} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
@@ -80,6 +84,7 @@ const App = () => (
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>
+    </ThemeProvider>
   </ErrorBoundary>
 );
 
