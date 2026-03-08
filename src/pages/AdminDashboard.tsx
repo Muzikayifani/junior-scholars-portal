@@ -331,6 +331,37 @@ const AdminDashboard = () => {
     }
   };
 
+  // Create new class
+  const handleCreateClass = async () => {
+    if (!newClassName || !newClassGrade) {
+      toast.error('Class name and grade level are required');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.from('classes').insert({
+        name: newClassName,
+        grade_level: parseInt(newClassGrade),
+        school_year: newClassYear,
+        capacity: parseInt(newClassCapacity) || 30,
+        teacher_id: newClassTeacher || null,
+      });
+      if (error) throw error;
+      toast.success('Class created successfully');
+      setCreateClassDialog(false);
+      setNewClassName('');
+      setNewClassGrade('');
+      setNewClassYear('2025-2026');
+      setNewClassCapacity('30');
+      setNewClassTeacher('');
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create class');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   // Unassign teacher from class
   const handleUnassignTeacher = async (classId: string) => {
     try {
