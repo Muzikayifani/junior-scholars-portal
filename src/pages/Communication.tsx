@@ -518,7 +518,9 @@ const Communication: React.FC = () => {
             ? "Message parents and students" 
             : isParent 
               ? "Contact your children's teachers" 
-              : "Message your teachers"}
+              : isAdmin
+                ? "Communicate with teachers"
+                : "Message your teachers"}
         </p>
       </div>
 
