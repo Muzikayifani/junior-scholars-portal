@@ -152,10 +152,10 @@ const FeeTracker = () => {
         <div>
           <h2 className="text-2xl font-bold">Fee Tracking</h2>
           <p className="text-muted-foreground">
-            {isTeacher ? 'Manage student fees and payments' : 'View your children\'s fee status'}
+            {isAdmin ? 'Manage student fees and payments' : isTeacher ? 'View fees for your students' : 'View your children\'s fee status'}
           </p>
         </div>
-        {isTeacher && (
+        {isAdmin && (
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button><Plus className="h-4 w-4 mr-2" />Create Fee</Button>
