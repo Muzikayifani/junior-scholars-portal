@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Users, BookOpen, ClipboardList, GraduationCap, Shield, Search, BarChart3, Plus, Link2, DollarSign, UserPlus, X, Pencil, Trash2, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { Navigate } from 'react-router-dom';
 
