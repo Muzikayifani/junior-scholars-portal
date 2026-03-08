@@ -308,6 +308,21 @@ const AdminDashboard = () => {
     }
   };
 
+  // Change user role via edge function
+  const handleChangeRole = async (userId: string, newRole: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('update-user-role', {
+        body: { user_id: userId, new_role: newRole },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(`Role updated to ${newRole}`);
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update role');
+    }
+  };
+
   // Unassign teacher from class
   const handleUnassignTeacher = async (classId: string) => {
     try {
