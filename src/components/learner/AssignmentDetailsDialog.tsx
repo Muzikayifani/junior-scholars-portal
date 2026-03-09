@@ -42,6 +42,7 @@ export function AssignmentDetailsDialog({
   onRefresh
 }: AssignmentDetailsDialogProps) {
   const { toast } = useToast();
+  const { profile } = useAuth();
   const [downloading, setDownloading] = useState(false);
 
   const getStatusBadge = () => {
