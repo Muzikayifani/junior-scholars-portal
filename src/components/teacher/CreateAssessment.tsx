@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { CalendarIcon, Plus } from 'lucide-react';
+import AIQuestionGenerator from './AIQuestionGenerator';
 
 interface CreateAssessmentProps {
   onAssessmentCreated?: () => void;
@@ -22,6 +23,12 @@ const CreateAssessment = ({ onAssessmentCreated }: CreateAssessmentProps) => {
   const [classes, setClasses] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [createdAssessment, setCreatedAssessment] = useState<{
+    id: string;
+    type: string;
+    subjectName: string;
+    totalMarks: number;
+  } | null>(null);
 
   // Load classes and subjects on component mount
   React.useEffect(() => {
@@ -115,9 +122,11 @@ const CreateAssessment = ({ onAssessmentCreated }: CreateAssessmentProps) => {
       teacher_id: profile.user_id,
     };
 
-    const { error } = await supabase
+    const { data: insertedData, error } = await supabase
       .from('assessments')
-      .insert(data);
+      .insert(data)
+      .select()
+      .single();
 
     if (error) {
       toast({
@@ -131,6 +140,18 @@ const CreateAssessment = ({ onAssessmentCreated }: CreateAssessmentProps) => {
         description: "Assessment created successfully!",
       });
       
+      // Show AI question generator for quiz/assignment types
+      const assessmentType = data.type;
+      if ((assessmentType === 'quiz' || assessmentType === 'assignment') && insertedData) {
+        const subjectName = subjects.find(s => s.id === data.subject_id)?.name || 'Unknown';
+        setCreatedAssessment({
+          id: insertedData.id,
+          type: assessmentType,
+          subjectName,
+          totalMarks: data.total_marks,
+        });
+      }
+      
       // Reset form
       (e.target as HTMLFormElement).reset();
       onAssessmentCreated?.();
@@ -138,6 +159,22 @@ const CreateAssessment = ({ onAssessmentCreated }: CreateAssessmentProps) => {
     
     setLoading(false);
   };
+
+  if (createdAssessment) {
+    return (
+      <div className="space-y-4">
+        <AIQuestionGenerator
+          assessmentId={createdAssessment.id}
+          subjectName={createdAssessment.subjectName}
+          assessmentType={createdAssessment.type}
+          totalMarks={createdAssessment.totalMarks}
+        />
+        <Button variant="outline" onClick={() => setCreatedAssessment(null)} className="w-full sm:w-auto">
+          Create Another Assessment
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <Card className="w-full">
