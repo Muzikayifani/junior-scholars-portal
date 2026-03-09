@@ -169,6 +169,7 @@ export default function Assignments() {
               due_date,
               total_marks,
               type,
+              is_published,
               subjects (name),
               classes (name),
               results!results_assessment_id_fkey (
@@ -178,6 +179,7 @@ export default function Assignments() {
               )
             `)
             .eq('class_id', learnerData.class_id)
+            .eq('is_published', true)
             .order('due_date', { ascending: true });
 
           if (error) throw error;
