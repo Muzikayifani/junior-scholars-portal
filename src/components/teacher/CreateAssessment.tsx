@@ -160,6 +160,22 @@ const CreateAssessment = ({ onAssessmentCreated }: CreateAssessmentProps) => {
     setLoading(false);
   };
 
+  if (createdAssessment) {
+    return (
+      <div className="space-y-4">
+        <AIQuestionGenerator
+          assessmentId={createdAssessment.id}
+          subjectName={createdAssessment.subjectName}
+          assessmentType={createdAssessment.type}
+          totalMarks={createdAssessment.totalMarks}
+        />
+        <Button variant="outline" onClick={() => setCreatedAssessment(null)} className="w-full sm:w-auto">
+          Create Another Assessment
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <Card className="w-full">
       <CardHeader>
