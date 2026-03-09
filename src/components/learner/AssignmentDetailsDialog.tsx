@@ -2,11 +2,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Calendar, Clock, BookOpen, User, FileText, Download, Upload } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar, Clock, BookOpen, User, FileText, Download, Upload, ListChecks } from 'lucide-react';
 import { format } from 'date-fns';
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import QuizTaker from './QuizTaker';
 
 interface AssignmentDetailsDialogProps {
   open: boolean;
@@ -39,6 +42,7 @@ export function AssignmentDetailsDialog({
   onRefresh
 }: AssignmentDetailsDialogProps) {
   const { toast } = useToast();
+  const { profile } = useAuth();
   const [downloading, setDownloading] = useState(false);
 
   const getStatusBadge = () => {
@@ -150,94 +154,148 @@ export function AssignmentDetailsDialog({
 
           <Separator />
 
-          {/* Description */}
-          {assignment.description && (
-            <div>
-              <h4 className="font-semibold mb-2">Description</h4>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {assignment.description}
-              </p>
-            </div>
-          )}
+          {/* Tabs for Details and Questions (learner only, quiz/assignment types) */}
+          {profile?.role === 'learner' && (assignment.type === 'quiz' || assignment.type === 'assignment') && (!assignment.status || assignment.status === 'pending') ? (
+            <Tabs defaultValue="questions" className="space-y-4">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="details">
+                  <FileText className="h-4 w-4 mr-1" />
+                  Details
+                </TabsTrigger>
+                <TabsTrigger value="questions">
+                  <ListChecks className="h-4 w-4 mr-1" />
+                  Questions
+                </TabsTrigger>
+              </TabsList>
 
-          {/* Instructions */}
-          {assignment.instructions && (
-            <div>
-              <h4 className="font-semibold mb-2">Instructions</h4>
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm whitespace-pre-wrap">
-                  {assignment.instructions}
-                </p>
-              </div>
-            </div>
-          )}
+              <TabsContent value="details" className="space-y-4">
+                {assignment.description && (
+                  <div>
+                    <h4 className="font-semibold mb-2">Description</h4>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {assignment.description}
+                    </p>
+                  </div>
+                )}
+                {assignment.instructions && (
+                  <div>
+                    <h4 className="font-semibold mb-2">Instructions</h4>
+                    <div className="p-4 bg-muted/50 rounded-lg">
+                      <p className="text-sm whitespace-pre-wrap">{assignment.instructions}</p>
+                    </div>
+                  </div>
+                )}
+                {onSubmitClick && (
+                  <Button onClick={onSubmitClick} className="w-full btn-gradient">
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload File Submission
+                  </Button>
+                )}
+              </TabsContent>
 
-          <Separator />
-
-          {/* Submission Status */}
-          {assignment.status === 'submitted' && (
-            <div className="p-4 bg-success/10 rounded-lg border border-success/20">
-              <div className="flex items-center gap-2 mb-2">
-                <Clock className="h-4 w-4 text-success" />
-                <h4 className="font-semibold text-success">Submitted</h4>
-              </div>
-              {assignment.submitted_at && (
-                <p className="text-sm text-muted-foreground mb-3">
-                  Submitted on {format(new Date(assignment.submitted_at), 'MMM d, yyyy h:mm a')}
-                </p>
+              <TabsContent value="questions">
+                <QuizTaker
+                  assessmentId={assignment.id}
+                  assessmentTitle={assignment.title}
+                  totalMarks={assignment.total_marks}
+                  onSubmitted={() => {
+                    onRefresh?.();
+                  }}
+                />
+              </TabsContent>
+            </Tabs>
+          ) : (
+            <>
+              {/* Description */}
+              {assignment.description && (
+                <div>
+                  <h4 className="font-semibold mb-2">Description</h4>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                    {assignment.description}
+                  </p>
+                </div>
               )}
-              {assignment.submission_path && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleDownloadSubmission}
-                  disabled={downloading}
-                  className="w-full"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  {downloading ? 'Downloading...' : 'Download Submission'}
+
+              {/* Instructions */}
+              {assignment.instructions && (
+                <div>
+                  <h4 className="font-semibold mb-2">Instructions</h4>
+                  <div className="p-4 bg-muted/50 rounded-lg">
+                    <p className="text-sm whitespace-pre-wrap">
+                      {assignment.instructions}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <Separator />
+
+              {/* Submission Status */}
+              {assignment.status === 'submitted' && (
+                <div className="p-4 bg-success/10 rounded-lg border border-success/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="h-4 w-4 text-success" />
+                    <h4 className="font-semibold text-success">Submitted</h4>
+                  </div>
+                  {assignment.submitted_at && (
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Submitted on {format(new Date(assignment.submitted_at), 'MMM d, yyyy h:mm a')}
+                    </p>
+                  )}
+                  {assignment.submission_path && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDownloadSubmission}
+                      disabled={downloading}
+                      className="w-full"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      {downloading ? 'Downloading...' : 'Download Submission'}
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              {/* Graded Status */}
+              {assignment.status === 'graded' && assignment.marks_obtained !== undefined && (
+                <div className="p-4 bg-info/10 rounded-lg border border-info/20">
+                  <h4 className="font-semibold text-info mb-2">Graded</h4>
+                  <div className="text-2xl font-bold mb-2">
+                    {assignment.marks_obtained}/{assignment.total_marks}
+                    <span className="text-lg text-muted-foreground ml-2">
+                      ({Math.round((assignment.marks_obtained / assignment.total_marks) * 100)}%)
+                    </span>
+                  </div>
+                  {assignment.submission_path && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDownloadSubmission}
+                      disabled={downloading}
+                      className="w-full mt-2"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      {downloading ? 'Downloading...' : 'Download Submission'}
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 pt-4">
+                <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
+                  Close
                 </Button>
-              )}
-            </div>
-          )}
-
-          {/* Graded Status */}
-          {assignment.status === 'graded' && assignment.marks_obtained !== undefined && (
-            <div className="p-4 bg-info/10 rounded-lg border border-info/20">
-              <h4 className="font-semibold text-info mb-2">Graded</h4>
-              <div className="text-2xl font-bold mb-2">
-                {assignment.marks_obtained}/{assignment.total_marks}
-                <span className="text-lg text-muted-foreground ml-2">
-                  ({Math.round((assignment.marks_obtained / assignment.total_marks) * 100)}%)
-                </span>
+                {assignment.status === 'pending' && onSubmitClick && (
+                  <Button onClick={onSubmitClick} className="flex-1 btn-gradient">
+                    <Upload className="h-4 w-4 mr-2" />
+                    Submit Work
+                  </Button>
+                )}
               </div>
-              {assignment.submission_path && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleDownloadSubmission}
-                  disabled={downloading}
-                  className="w-full mt-2"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  {downloading ? 'Downloading...' : 'Download Submission'}
-                </Button>
-              )}
-            </div>
+            </>
           )}
-
-          {/* Action Buttons */}
-          <div className="flex gap-2 pt-4">
-            <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
-              Close
-            </Button>
-            {assignment.status === 'pending' && onSubmitClick && (
-              <Button onClick={onSubmitClick} className="flex-1 btn-gradient">
-                <Upload className="h-4 w-4 mr-2" />
-                Submit Work
-              </Button>
-            )}
-          </div>
         </div>
       </DialogContent>
     </Dialog>
