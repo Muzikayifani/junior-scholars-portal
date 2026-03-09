@@ -48,7 +48,12 @@ const QuizTaker = ({ assessmentId, assessmentTitle, totalMarks, onSubmitted }: Q
         console.error('Error fetching questions:', error);
         toast({ title: 'Error', description: 'Failed to load questions', variant: 'destructive' });
       } else {
-        setQuestions(data || []);
+        const mapped = (data || []).map(d => ({
+          ...d,
+          options: (Array.isArray(d.options) ? d.options : []) as string[],
+        }));
+        setQuestions(mapped);
+      }
       }
       setLoading(false);
     };
