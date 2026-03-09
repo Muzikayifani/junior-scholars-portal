@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { CalendarIcon, Plus } from 'lucide-react';
+import AIQuestionGenerator from './AIQuestionGenerator';
 
 interface CreateAssessmentProps {
   onAssessmentCreated?: () => void;
