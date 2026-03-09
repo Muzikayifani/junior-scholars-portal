@@ -122,9 +122,11 @@ const CreateAssessment = ({ onAssessmentCreated }: CreateAssessmentProps) => {
       teacher_id: profile.user_id,
     };
 
-    const { error } = await supabase
+    const { data: insertedData, error } = await supabase
       .from('assessments')
-      .insert(data);
+      .insert(data)
+      .select()
+      .single();
 
     if (error) {
       toast({
@@ -137,6 +139,18 @@ const CreateAssessment = ({ onAssessmentCreated }: CreateAssessmentProps) => {
         title: "Success",
         description: "Assessment created successfully!",
       });
+      
+      // Show AI question generator for quiz/assignment types
+      const assessmentType = data.type;
+      if ((assessmentType === 'quiz' || assessmentType === 'assignment') && insertedData) {
+        const subjectName = subjects.find(s => s.id === data.subject_id)?.name || 'Unknown';
+        setCreatedAssessment({
+          id: insertedData.id,
+          type: assessmentType,
+          subjectName,
+          totalMarks: data.total_marks,
+        });
+      }
       
       // Reset form
       (e.target as HTMLFormElement).reset();
