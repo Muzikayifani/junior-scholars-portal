@@ -54,7 +54,6 @@ const QuizTaker = ({ assessmentId, assessmentTitle, totalMarks, onSubmitted }: Q
         }));
         setQuestions(mapped);
       }
-      }
       setLoading(false);
     };
 
