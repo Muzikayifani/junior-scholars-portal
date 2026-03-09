@@ -23,6 +23,12 @@ const CreateAssessment = ({ onAssessmentCreated }: CreateAssessmentProps) => {
   const [classes, setClasses] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [createdAssessment, setCreatedAssessment] = useState<{
+    id: string;
+    type: string;
+    subjectName: string;
+    totalMarks: number;
+  } | null>(null);
 
   // Load classes and subjects on component mount
   React.useEffect(() => {
