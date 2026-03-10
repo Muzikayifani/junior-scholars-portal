@@ -113,11 +113,10 @@ const QuizTaker = ({ assessmentId, assessmentTitle, totalMarks, onSubmitted }: Q
 
       setScore({ correct, total: questions.length });
       setSubmitted(true);
-      toast({
-        title: 'Quiz Submitted!',
-        description: `You scored ${correct}/${questions.length} (${Math.round((correct / questions.length) * 100)}%)`,
-      });
-      onSubmitted?.();
+      // Delay onSubmitted so the score animation plays before dialog closes
+      setTimeout(() => {
+        onSubmitted?.();
+      }, 3000);
     } catch (error: any) {
       console.error('Submit error:', error);
       toast({ title: 'Submission Failed', description: error.message, variant: 'destructive' });
@@ -151,48 +150,39 @@ const QuizTaker = ({ assessmentId, assessmentTitle, totalMarks, onSubmitted }: Q
 
   if (submitted && score) {
     const percentage = Math.round((score.correct / score.total) * 100);
+    const passed = percentage >= 50;
     return (
-      <div className="space-y-4">
-        <Card className={`border-2 ${percentage >= 50 ? 'border-green-500/30 bg-green-50 dark:bg-green-950/20' : 'border-red-500/30 bg-red-50 dark:bg-red-950/20'}`}>
-          <CardContent className="pt-6 text-center space-y-3">
-            {percentage >= 50 ? (
-              <CheckCircle className="h-12 w-12 text-green-500 mx-auto" />
-            ) : (
-              <XCircle className="h-12 w-12 text-red-500 mx-auto" />
-            )}
-            <h3 className="text-2xl font-bold">{percentage}%</h3>
-            <p className="text-muted-foreground">
-              You got {score.correct} out of {score.total} questions correct
-            </p>
-            <p className="text-sm font-medium">
-              Marks: {Math.round((score.correct / score.total) * totalMarks)}/{totalMarks}
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Show answers review */}
-        <div className="space-y-3">
-          <h4 className="font-semibold text-sm">Review Answers</h4>
-          {questions.map((q, i) => {
-            const userAnswer = answers[q.id];
-            const isCorrect = userAnswer === q.correct_answer;
-            return (
-              <div key={q.id} className={`rounded-lg border p-3 ${isCorrect ? 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-950/20' : 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/20'}`}>
-                <div className="flex items-start gap-2">
-                  <span className="text-xs font-bold text-muted-foreground mt-0.5">Q{i + 1}.</span>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium mb-1">{q.question_text}</p>
-                    <div className="flex flex-col gap-1 text-xs">
-                      <span>Your answer: <strong>{userAnswer}</strong> {isCorrect ? '✓' : '✗'}</span>
-                      {!isCorrect && <span className="text-green-600 dark:text-green-400">Correct answer: <strong>{q.correct_answer}</strong></span>}
-                    </div>
-                  </div>
-                  {isCorrect ? <CheckCircle className="h-4 w-4 text-green-500 shrink-0" /> : <XCircle className="h-4 w-4 text-red-500 shrink-0" />}
-                </div>
-              </div>
-            );
-          })}
+      <div className="flex flex-col items-center justify-center py-8 space-y-6 animate-fade-in">
+        {/* Animated circle score */}
+        <div className={`relative flex items-center justify-center w-32 h-32 rounded-full border-4 animate-scale-in ${passed ? 'border-success bg-success/10' : 'border-destructive bg-destructive/10'}`}>
+          <div className="text-center">
+            <p className="text-3xl font-bold">{percentage}%</p>
+            <p className="text-xs text-muted-foreground">Score</p>
+          </div>
         </div>
+
+        {/* Icon + message */}
+        <div className="text-center space-y-2 animate-fade-in" style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
+          {passed ? (
+            <CheckCircle className="h-10 w-10 text-success mx-auto" />
+          ) : (
+            <XCircle className="h-10 w-10 text-destructive mx-auto" />
+          )}
+          <h3 className="text-xl font-semibold">
+            {passed ? 'Great Job!' : 'Keep Practicing!'}
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            You got <strong>{score.correct}</strong> out of <strong>{score.total}</strong> correct
+          </p>
+          <p className="text-sm font-medium">
+            Marks: {Math.round((score.correct / score.total) * totalMarks)}/{totalMarks}
+          </p>
+        </div>
+
+        {/* Closing hint */}
+        <p className="text-xs text-muted-foreground animate-fade-in" style={{ animationDelay: '0.8s', animationFillMode: 'both' }}>
+          Closing automatically…
+        </p>
       </div>
     );
   }
