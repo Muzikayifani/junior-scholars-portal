@@ -113,11 +113,10 @@ const QuizTaker = ({ assessmentId, assessmentTitle, totalMarks, onSubmitted }: Q
 
       setScore({ correct, total: questions.length });
       setSubmitted(true);
-      toast({
-        title: 'Quiz Submitted!',
-        description: `You scored ${correct}/${questions.length} (${Math.round((correct / questions.length) * 100)}%)`,
-      });
-      onSubmitted?.();
+      // Delay onSubmitted so the score animation plays before dialog closes
+      setTimeout(() => {
+        onSubmitted?.();
+      }, 3000);
     } catch (error: any) {
       console.error('Submit error:', error);
       toast({ title: 'Submission Failed', description: error.message, variant: 'destructive' });
