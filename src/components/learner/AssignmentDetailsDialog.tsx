@@ -200,6 +200,7 @@ export function AssignmentDetailsDialog({
                   totalMarks={assignment.total_marks}
                   onSubmitted={() => {
                     onRefresh?.();
+                    setTimeout(() => onOpenChange(false), 2000);
                   }}
                 />
               </TabsContent>
