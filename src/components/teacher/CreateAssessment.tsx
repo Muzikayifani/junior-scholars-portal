@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { CalendarIcon, Plus } from 'lucide-react';
+import { CalendarIcon, Plus, Send, Loader2 } from 'lucide-react';
 import AIQuestionGenerator from './AIQuestionGenerator';
 
 interface CreateAssessmentProps {
