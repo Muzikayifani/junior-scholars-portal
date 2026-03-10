@@ -160,6 +160,26 @@ const CreateAssessment = ({ onAssessmentCreated }: CreateAssessmentProps) => {
     setLoading(false);
   };
 
+  const [publishing, setPublishing] = useState(false);
+
+  const handlePublish = async () => {
+    if (!createdAssessment) return;
+    setPublishing(true);
+    const { error } = await supabase
+      .from('assessments')
+      .update({ is_published: true })
+      .eq('id', createdAssessment.id);
+
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Published!', description: 'Assessment is now visible to learners.' });
+      setCreatedAssessment(null);
+      onAssessmentCreated?.();
+    }
+    setPublishing(false);
+  };
+
   if (createdAssessment) {
     return (
       <div className="space-y-4">
@@ -169,9 +189,22 @@ const CreateAssessment = ({ onAssessmentCreated }: CreateAssessmentProps) => {
           assessmentType={createdAssessment.type}
           totalMarks={createdAssessment.totalMarks}
         />
-        <Button variant="outline" onClick={() => setCreatedAssessment(null)} className="w-full sm:w-auto">
-          Create Another Assessment
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button
+            onClick={handlePublish}
+            disabled={publishing}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            {publishing ? (
+              <><Loader2 className="h-4 w-4 animate-spin mr-1" /> Publishing...</>
+            ) : (
+              <><Send className="h-4 w-4 mr-1" /> Publish Assessment</>
+            )}
+          </Button>
+          <Button variant="outline" onClick={() => setCreatedAssessment(null)}>
+            Create Another Assessment
+          </Button>
+        </div>
       </div>
     );
   }
