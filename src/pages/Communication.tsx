@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ interface Participant {
 
 const Communication: React.FC = () => {
   const { profile, user } = useAuth();
+  const { markThreadAsRead } = useUnreadMessages();
   const [threads, setThreads] = useState<Thread[]>([]);
   const [activeThread, setActiveThread] = useState<Thread | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -78,6 +80,7 @@ const Communication: React.FC = () => {
         setActiveThread(data[0]);
         loadMessages(data[0].id);
         loadParticipants(data[0].id);
+        markThreadAsRead(data[0].id);
       }
     } catch (error: any) {
       console.error("Error loading threads:", error);
@@ -546,6 +549,7 @@ const Communication: React.FC = () => {
                     setActiveThread(t);
                     loadMessages(t.id);
                     loadParticipants(t.id);
+                    markThreadAsRead(t.id);
                   }}
                   className={`w-full text-left rounded-lg p-3 border transition-colors ${
                     activeThread?.id === t.id 
