@@ -80,6 +80,7 @@ const Communication: React.FC = () => {
         setActiveThread(data[0]);
         loadMessages(data[0].id);
         loadParticipants(data[0].id);
+        markThreadAsRead(data[0].id);
       }
     } catch (error: any) {
       console.error("Error loading threads:", error);
