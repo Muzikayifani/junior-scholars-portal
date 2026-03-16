@@ -33,6 +33,7 @@ interface Participant {
 
 const Communication: React.FC = () => {
   const { profile, user } = useAuth();
+  const { markThreadAsRead } = useUnreadMessages();
   const [threads, setThreads] = useState<Thread[]>([]);
   const [activeThread, setActiveThread] = useState<Thread | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
