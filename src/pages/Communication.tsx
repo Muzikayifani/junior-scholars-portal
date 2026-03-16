@@ -549,6 +549,7 @@ const Communication: React.FC = () => {
                     setActiveThread(t);
                     loadMessages(t.id);
                     loadParticipants(t.id);
+                    markThreadAsRead(t.id);
                   }}
                   className={`w-full text-left rounded-lg p-3 border transition-colors ${
                     activeThread?.id === t.id 
